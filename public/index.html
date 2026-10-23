@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<title>Grupo Support · Integração SIGA x SGA</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" id="favicon">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Identidade Grupo Support: mesmas cores e fonte do painel (sistema/app/sinistro/painel_modelo.html) */
+  :root { --verde:#a9c927; --verde-600:#748c05; --verde-700:#5c7007;
+          --cinza:#4d4d4d; --tinta:#373435; --tinta-2:#666364; --mudo:#8c898a; --linha:#e7e7e4;
+          --plano:#f6f6f3; --superficie:#fff; --critico:#d03b3b;
+          --fonte:"Poppins","Segoe UI",system-ui,sans-serif; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--plano); color:var(--tinta); font:400 14px/1.5 var(--fonte); }
+  .faixa { background:var(--cinza); color:#fff; font-size:12px; padding:7px 22px; display:flex;
+           justify-content:space-between; letter-spacing:.3px; }
+  .faixa strong { font-weight:600; }
+  header { background:var(--superficie); border-bottom:3px solid var(--verde); padding:14px 22px;
+           display:flex; align-items:center; justify-content:space-between; gap:16px; }
+  header img { height:46px; display:block; }
+  .logo-texto { font-weight:700; font-size:24px; color:var(--cinza); line-height:1; }
+  .logo-texto small { display:block; font-weight:500; font-size:10px; letter-spacing:7px; }
+  header .titulo { text-align:right; font-size:11px; letter-spacing:1.5px; text-transform:uppercase; color:var(--tinta-2); }
+  header .titulo b { display:block; font-size:15px; letter-spacing:.5px; color:var(--tinta); text-transform:none; font-weight:600; }
+  main { padding:18px 22px 22px; }
+  .cartao { background:var(--superficie); border:1px solid var(--linha); border-radius:10px; padding:18px 20px; }
+  .cartao + .cartao { margin-top:14px; }
+  h2 { margin:0 0 4px; font-size:12px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--verde-600); }
+  label.campo { display:block; font-size:12.5px; font-weight:600; margin:12px 0 4px; }
+  input[type=text], input[type=password] { width:100%; padding:9px 11px; font:inherit; font-size:14.5px;
+         color:var(--tinta); border:1px solid #d5d4cf; border-radius:6px; outline:none; background:#fff; }
+  input:focus { border-color:var(--verde); box-shadow:0 0 0 3px rgba(169,201,39,.25); }
+  input:disabled { background:var(--plano); color:var(--mudo); }
+  .lembrar { display:flex; gap:8px; align-items:center; margin:12px 0 0; font-size:13.5px; cursor:pointer; }
+  .lembrar input { accent-color:var(--verde-600); width:16px; height:16px; }
+  .pasta { display:flex; gap:8px; align-items:stretch; margin-top:6px; }
+  .pasta .caminho { flex:1; min-width:0; padding:8px 11px; border:1px solid #d5d4cf; border-radius:6px; background:var(--plano);
+         font-size:12.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; direction:rtl; text-align:left; }
+  .dica { font-size:12px; color:var(--tinta-2); margin:4px 0 0; }
+  button { font:inherit; font-size:14px; padding:9px 16px; border-radius:6px; border:1px solid #d5d4cf;
+           background:#fff; color:var(--tinta); cursor:pointer; white-space:nowrap; }
+  button:hover:not(:disabled) { border-color:var(--verde-600); }
+  button.prim { background:var(--verde-600); border-color:var(--verde-600); color:#fff; font-weight:600;
+           letter-spacing:.3px; flex:1; padding:11px 16px; }
+  button.prim:hover:not(:disabled) { background:var(--verde-700); border-color:var(--verde-700); }
+  button:disabled { opacity:.5; cursor:default; }
+  .botoes { display:flex; gap:10px; margin-top:16px; }
+  .msg { margin-top:10px; font-size:13px; min-height:19px; }
+  .msg.erro { color:var(--critico); } .msg.ok { color:var(--verde-700); font-weight:500; }
+  .linha-status { display:flex; justify-content:space-between; gap:10px; margin:6px 0 8px; font-size:13.5px; }
+  #status { font-weight:600; } #pct { font-weight:600; color:var(--verde-600); font-variant-numeric:tabular-nums; }
+  .trilho { height:12px; background:#ebeae5; border-radius:6px; overflow:hidden; }
+  .barra { height:100%; width:0; background:var(--verde); border-radius:6px; transition:width .5s; }
+  .barra.ativa { background-image:linear-gradient(45deg,rgba(255,255,255,.3) 25%,transparent 25%,transparent 50%,
+        rgba(255,255,255,.3) 50%,rgba(255,255,255,.3) 75%,transparent 75%); background-size:20px 20px;
+        animation:listras 1s linear infinite; }
+  .barra.ok { background:var(--verde-600); } .barra.erro { background:var(--critico); }
+  @keyframes listras { to { background-position:20px 0; } }
+  .tempo { font-size:12px; color:var(--mudo); margin-top:6px; min-height:18px; }
+  details { margin-top:8px; font-size:12.5px; } summary { cursor:pointer; color:var(--tinta-2); }
+  pre { background:var(--plano); color:var(--tinta-2); border:1px solid var(--linha); border-radius:6px; padding:10px;
+        height:170px; overflow:auto; font:11.5px/1.45 Consolas,"Cascadia Mono",monospace;
+        white-space:pre-wrap; word-break:break-word; margin:8px 0 0; }
+
+  /* símbolo (dois arcos) montado em camadas: gira enquanto atualiza */
+  .marca { position:relative; aspect-ratio:1804/460; }
+  .marca > * { position:absolute; left:0; top:0; height:100%; }
+  .marca .texto-logo { width:100%; clip-path:inset(0 0 0 29.1%); }
+  .marca canvas { width:29.1%; transform-origin:45.5% 49.3%; }
+  header .marca { height:46px; }
+  .arcos { position:relative; width:30px; height:26px; flex:none; }  /* proporção do símbolo 525x460 */
+  .arcos canvas { position:absolute; inset:0; width:100%; height:100%; transform-origin:45.5% 49.3%; }
+  .girando .arco-a { animation:giro 1.1s linear infinite; }
+  .girando .arco-b { animation:giro 1.7s linear infinite; }
+  @keyframes giro { from { transform:rotate(0); } to { transform:rotate(360deg); } }
+  .status-esq { display:flex; align-items:center; gap:10px; min-width:0; }
+  .status-esq .arcos { display:none; }
+  .rodando .status-esq .arcos { display:block; }
+  #detalhe { font-size:12.5px; color:var(--tinta-2); margin:-4px 0 8px; min-height:19px; }
+  .pontos::after { content:''; animation:pontos 1.4s steps(4) infinite; }
+  @keyframes pontos { 0% { content:''; } 25% { content:'.'; } 50% { content:'..'; } 75% { content:'...'; } }
+
+  /* abas do topo: Atualização | Resultados (mesmo estilo do menu do site) */
+  nav.abas { display:flex; gap:26px; padding:0 22px; background:var(--superficie); border-bottom:1px solid var(--linha); }
+  .aba { border:0; border-bottom:3px solid transparent; border-radius:0; background:none; padding:11px 2px 9px;
+         font-size:12.5px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; color:var(--tinta-2); }
+  .aba:hover:not(:disabled) { color:var(--tinta); border-color:var(--linha); }
+  .aba.ativa { color:var(--verde-700); border-bottom-color:var(--verde); }
+  .selo { margin-left:4px; padding:1px 6px; border-radius:9px; background:var(--verde); color:#fff; font-size:10px;
+          letter-spacing:.5px; vertical-align:1px; }
+
+  /* aba Resultados: painel aberto dentro da tela + botão para o navegador */
+  .seletor { display:flex; gap:6px; flex-wrap:wrap; margin-top:10px; }
+  .seletor button { font-size:13px; padding:7px 12px; }
+  .seletor button.ativo { background:var(--verde-600); border-color:var(--verde-600); color:#fff; font-weight:600; }
+  .barra-painel { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:10px 0 8px;
+                  font-size:12px; color:var(--mudo); }
+  .visor { position:relative; border:1px solid var(--linha); border-radius:8px; overflow:hidden; background:var(--plano); }
+  .visor iframe { display:block; width:100%; height:max(440px, calc(100vh - 330px)); border:0; background:#fff; }
+  .visor-vazio { margin:0; padding:60px 20px; text-align:center; color:var(--mudo); }
+  h3.sub-h { margin:16px 0 8px; font-size:12px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:var(--tinta-2); }
+  .planilhas { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .planilha { display:flex; gap:6px; }
+  .planilha .abrir { flex:1; display:flex; align-items:center; gap:8px; text-align:left; padding:9px 12px;
+                     overflow:hidden; text-overflow:ellipsis; }
+  .planilha .abrir svg { flex:none; }
+  .planilha .abrir.sem-link { border-style:dashed; color:var(--tinta-2); }
+  .planilha .editar { padding:9px 10px; color:var(--tinta-2); }
+  .btn-verde { background:#fff; border-color:var(--verde-600); color:var(--verde-700); font-weight:600; }
+  .btn-verde:hover:not(:disabled) { background:var(--verde-600); color:#fff; }
+
+  /* visão ao vivo do navegador oculto */
+  .previa { margin:10px 0 4px; border:1px solid var(--linha); border-radius:8px; overflow:hidden; background:var(--plano); }
+  .previa figcaption { display:flex; align-items:center; gap:8px; padding:6px 10px; font-size:12px; color:var(--tinta-2);
+                       background:#fff; border-bottom:1px solid var(--linha); }
+  .previa img { display:block; width:100%; max-height:240px; object-fit:contain; background:#fff; }
+  .ao-vivo { display:inline-flex; align-items:center; gap:5px; font-size:10.5px; font-weight:600; letter-spacing:1px;
+             text-transform:uppercase; color:var(--critico); }
+  .ao-vivo::before { content:''; width:7px; height:7px; border-radius:50%; background:currentColor;
+                     animation:pulso 1.2s ease-in-out infinite; }
+  .ao-vivo.parado { color:var(--mudo); } .ao-vivo.parado::before { animation:none; }
+  @keyframes pulso { 50% { opacity:.25; } }
+
+  /* Detalhes: etapas em lista clara */
+  ol.etapas { list-style:none; margin:10px 0 0; padding:0; }
+  ol.etapas li { display:grid; grid-template-columns:22px 1fr auto; gap:2px 8px; padding:7px 2px;
+                 border-bottom:1px solid var(--linha); align-items:start; }
+  ol.etapas li:last-child { border-bottom:0; }
+  ol.etapas .ic { width:18px; height:18px; border-radius:50%; display:grid; place-items:center; margin-top:1px;
+                  font-size:11px; font-weight:700; color:#fff; background:var(--verde-600); }
+  ol.etapas .ic.erro { background:var(--critico); }
+  ol.etapas .ic .arcos { width:21px; height:18px; }
+  ol.etapas li.atual .ic { background:none; }
+  ol.etapas .msg-etapa { font-weight:500; color:var(--tinta); }
+  ol.etapas li.atual .msg-etapa { color:var(--verde-700); font-weight:600; }
+  ol.etapas .sub { grid-column:2 / 4; font-size:12px; color:var(--tinta-2); }
+  ol.etapas .dur { font-size:11.5px; color:var(--mudo); font-variant-numeric:tabular-nums; }
+  .vazio { color:var(--mudo); font-size:12.5px; margin:10px 0 0; }
+  details.tecnico { margin-top:10px; }
+
+  /* ---------- abertura: fumaça -> dois arcos girando como rodas -> logo -> tela ---------- */
+  .app { opacity:0; transform:translateY(10px); transition:opacity .7s ease, transform .7s ease; }
+  body.pronto .app { opacity:1; transform:none; }
+  #abertura { position:fixed; inset:0; z-index:10; background:#fff; display:flex; flex-direction:column;
+              align-items:center; justify-content:center; overflow:hidden; cursor:pointer;
+              transition:opacity .8s ease, filter .8s ease, transform .8s ease; }
+  #abertura.saindo { opacity:0; filter:blur(10px); transform:scale(1.04); pointer-events:none; }
+  .fumaca { position:absolute; left:50%; top:46%; width:260px; height:260px; margin:-130px 0 0 -130px;
+            border-radius:50%; opacity:0; filter:blur(26px); animation:fumaca 2.6s ease-out forwards; }
+  @keyframes fumaca {
+    0%   { opacity:0;   transform:translate(0,0) scale(.3); }
+    25%  { opacity:.85; }
+    100% { opacity:0;   transform:translate(var(--dx),var(--dy)) scale(2.4); }
+  }
+  .marca-abertura { position:relative; width:min(78vw,430px); aspect-ratio:1804/460; }
+  .marca-abertura > * { position:absolute; left:0; top:0; height:100%; }
+  .marca-abertura .texto-logo { width:100%; clip-path:inset(0 0 0 29.1%); opacity:0; filter:blur(16px);
+            transform:translateX(-14px); animation:surgir 1s ease-out 1.65s forwards; }
+  .marca-abertura canvas { width:29.1%; opacity:0; transform-origin:45.5% 49.3%; }
+  .marca-abertura .arco-a { animation:arcoA 2s cubic-bezier(.15,.75,.25,1) .35s forwards; }
+  .marca-abertura .arco-b { animation:arcoB 2s cubic-bezier(.2,.7,.25,1) .35s forwards; }
+  /* As duas rodas giram em velocidades diferentes e se encaixam (múltiplos de 360°: terminam na posição da logo). */
+  @keyframes arcoA {
+    0%   { opacity:0; filter:blur(12px); transform:rotate(-1080deg) scale(.55); }
+    20%  { opacity:1; filter:blur(3px); }
+    88%  { filter:blur(0); transform:rotate(10deg) scale(1.02); }
+    100% { opacity:1; filter:blur(0); transform:rotate(0) scale(1); }
+  }
+  @keyframes arcoB {
+    0%   { opacity:0; filter:blur(12px); transform:rotate(-720deg) scale(.55); }
+    20%  { opacity:1; filter:blur(3px); }
+    88%  { filter:blur(0); transform:rotate(-8deg) scale(1.02); }
+    100% { opacity:1; filter:blur(0); transform:rotate(0) scale(1); }
+  }
+  @keyframes surgir { to { opacity:1; filter:blur(0); transform:none; } }
+  .legenda-abertura { margin-top:22px; font-size:12px; letter-spacing:4px; text-transform:uppercase; color:var(--tinta-2);
+            opacity:0; filter:blur(6px); animation:surgir .8s ease-out 2.2s forwards; }
+  .credito { position:absolute; bottom:18px; left:0; right:0; text-align:center; font-size:11px; letter-spacing:.6px;
+             color:var(--mudo); opacity:0; animation:surgir .9s ease-out 2.4s forwards; }
+  .credito b { font-weight:600; color:var(--tinta-2); }
+  @media (prefers-reduced-motion: reduce) {
+    .fumaca { display:none; }
+    .marca-abertura canvas, .marca-abertura .texto-logo, .legenda-abertura, .credito { animation:surgir .4s ease-out forwards; transform:none; }
+  }
+
+  #abertura {display:none!important} .app{opacity:1!important;transform:none!important}
+  #logo {display:flex;align-items:center;min-width:180px} #logo img {display:block}
+  .caminho {overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .aviso-nuvem{font-size:12px;color:#657000;margin:7px 0 0}
+  .chip-periodo{font-size:12px;color:#53620a;margin-top:9px}
+  .erro-visivel{color:#ac3131!important} .ok-visivel{color:#4a7700!important}
+</style></head>
+<body>
+<div id="abertura" title="Clique para pular">
+  <div class="marca-abertura" id="marca-abertura"></div>
+  <div class="legenda-abertura">Integração SIGA x SGA</div>
+  <div class="credito">Desenvolvido por <b>WS Consultoria</b></div>
+</div>
+<div class="app">
+
+<header>
+  <div id="logo"><img src="/logo.webp" alt="Grupo Support" style="height:100%;max-height:54px;width:auto;max-width:200px;object-fit:contain"></div>
+  <div class="titulo"><b>Integração SIGA x SGA</b></div>
+</header>
+<nav class="abas" role="tablist">
+  <button type="button" role="tab" class="aba ativa" data-aba="atualizacao" aria-selected="true">Atualização</button>
+  <button type="button" role="tab" class="aba" data-aba="resultados" aria-selected="false">Resultados <span class="selo" id="selo-novo" hidden>novo</span></button>
+</nav>
+<main>
+  <form id="form" autocomplete="off">
+    <section class="cartao">
+      <h2>Conexão com o SIGA</h2>
+      <label class="campo" for="usuario">Login</label>
+      <input type="text" id="usuario" spellcheck="false" value="Integrador Grupo Support" readonly>
+      <label class="campo" for="senha">Chave do integrador (X-API-Key)</label>
+      <input type="password" id="senha">
+      <label class="lembrar"><input type="checkbox" id="lembrar"> Manter chave nesta aba enquanto estiver aberta</label>
+      <p class="chip-periodo">Histórico SGA: 01/01/2020 até hoje · SIGA: 2021 até hoje. A consulta completa é progressiva.</p>
+    </section>
+    <section class="cartao">
+      <h2>Salvar resultados em</h2>
+      <div class="pasta"><div class="caminho" id="destino" title=""></div>
+        <button type="button" id="escolher">Abrir planilha…</button></div>
+      <p class="dica">Os sinistros do SGA são enviados à aba SGA da planilha Google configurada. Nenhum arquivo é salvo no servidor Vercel.</p>
+      <div class="botoes">
+        <button type="submit" class="prim" id="conectar">Conectar e atualizar</button>
+        <button type="button" id="cancelar" hidden>Cancelar</button>
+        <button type="button" class="btn-verde" id="ver-resultados" hidden>Ver resultados</button>
+        <button type="button" id="resultados" hidden>Abrir pasta</button>
+      </div>
+      <div class="msg" id="msg"></div>
+    </section>
+    <section class="cartao" id="andamento">
+      <h2>Andamento</h2>
+      <div class="linha-status">
+        <span class="status-esq"><span class="arcos girando" id="arcos-status"></span><span id="status">Pronto para conectar</span></span>
+        <span id="pct">0%</span>
+      </div>
+      <div id="detalhe"></div>
+      <div class="trilho"><div class="barra" id="barra"></div></div>
+      <div class="tempo" id="tempo"></div>
+      <figure class="previa" id="previa" hidden>
+        <figcaption><span class="ao-vivo" id="previa-rotulo">Ao vivo</span>
+          <span>Consultas SGA / SIGA na nuvem</span></figcaption>
+        <img id="previa-img" alt="O que o navegador oculto está mostrando agora">
+      </figure>
+      <details id="det"><summary>Detalhes</summary>
+        <ol class="etapas" id="etapas"></ol>
+        <p class="vazio" id="sem-etapas">As etapas aparecem aqui quando a atualização começar.</p>
+        <details class="tecnico"><summary>Registro técnico</summary><pre id="log"></pre></details>
+      </details>
+    </section>
+  </form>
+
+  <div id="aba-resultados" hidden>
+    <section class="cartao">
+      <h2>Painéis originais</h2>
+      <div class="seletor" id="seletor-paineis" role="tablist"></div>
+      <div class="barra-painel">
+        <span id="painel-atualizado"></span>
+        <button type="button" class="btn-verde" id="abrir-painel">Abrir no navegador</button>
+      </div>
+      <div class="visor">
+        <iframe id="visor" title="Painel" sandbox="allow-scripts allow-same-origin allow-downloads allow-modals allow-forms"></iframe>
+        <p class="visor-vazio" id="visor-vazio" hidden>Os painéis aparecem aqui depois da primeira atualização.</p>
+      </div>
+    </section>
+    <section class="cartao">
+      <h2>Planilhas no Google</h2>
+      <div class="planilhas" id="planilhas"></div>
+      <p class="dica" id="dica-chrome">Planilha editada pela conta de serviço do Google, somente após confirmação de acesso.</p>
+    </section>
+    <section class="cartao">
+      <h2>Consulta ao SIGA (2021 até hoje)</h2>
+      <p class="dica">Validação de sessão e filtros. O SIGA informou zero registros nos últimos testes; não há gravação de resultados vazios.</p>
+      <div class="pasta" style="flex-wrap:wrap;gap:10px;margin-top:12px">
+        <label>Ano <input type="number" id="siga-ano" min="2021" max="2100" value="2026" style="width:100px;padding:8px"></label>
+        <label>Mês <input type="number" id="siga-mes" min="1" max="12" value="10" style="width:75px;padding:8px"></label>
+        <label>Empresa <input type="text" id="siga-empresa" value="141" style="width:110px;padding:8px"></label>
+        <button type="button" id="siga-testar" class="btn-verde">Verificar SIGA</button>
+      </div>
+      <p id="siga-resposta" class="dica" role="status">Nenhuma verificação nesta sessão.</p>
+    </section>
+  </div>
+</main>
+</div>
+<script src="/app.js" defer></script></body></html>

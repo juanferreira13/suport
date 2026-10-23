@@ -1,0 +1,25 @@
+name: Grupo Support - Atualizar SGA no Sheets
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '15 9 * * *' # 06:15 de Brasília durante UTC-3
+permissions:
+  contents: read
+concurrency:
+  group: support-sga-google
+  cancel-in-progress: false
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Atualizar histórico e registros recentes
+        env:
+          INTEGRADOR_API_KEY: ${{ secrets.INTEGRADOR_API_KEY }}
+          INTEGRADOR_URL: https://grupo-suport.vercel.app
+          MAX_STEPS: '100'
+        run: python scripts/atualizar_nuvem.py
