@@ -1,0 +1,848 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Acompanhamento dos analistas · Grupo Support</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Identidade do Grupo Support: verde #a9c927, cinza #4d4d4d, texto #373435, Poppins, etiquetas em pílula. */
+  :root {
+    color-scheme: light;
+    --verde: #a9c927;
+    --verde-100: #e1f9a0;
+    --verde-300: #bfda69;
+    --verde-500: #8daa01;
+    --verde-600: #748c05;    /* barras: mesmo verde, um passo mais escuro */
+    --verde-700: #5c7007;
+    --verde-900: #303b0a;
+    --cinza: #4d4d4d;
+    --tinta: #373435;
+    --tinta-2: #666364;
+    --mudo: #8c898a;
+    --linha: #e7e7e4;
+    --eixo: #c9c8c4;
+    --plano: #f6f6f3;
+    --superficie: #ffffff;
+    --bom: #0ca30c; --aviso: #fab219; --serio: #ec835a; --critico: #d03b3b;   /* estados: sempre com ícone + rótulo */
+    --fonte: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--plano); color: var(--tinta); font: 400 14px/1.5 var(--fonte); }
+  body.com-barra { padding-bottom: 92px; }
+  .largura { max-width: 1320px; margin: 0 auto; padding: 0 24px; }
+
+  .topo { background: var(--cinza); color: #fff; font-size: 12.5px; }
+  .topo .largura { display: flex; gap: 16px; justify-content: space-between; flex-wrap: wrap; padding-top: 9px; padding-bottom: 9px; }
+  .topo strong { font-weight: 600; }
+  header.marca { background: var(--superficie); box-shadow: 0 1px 0 var(--linha); }
+  header.marca .largura { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-top: 14px; padding-bottom: 14px; }
+  .logo img { height: 52px; display: block; }
+  .logo .texto { font-weight: 700; font-size: 26px; letter-spacing: .5px; color: var(--cinza); line-height: 1; }
+  .logo .texto small { display: block; font-weight: 500; font-size: 11px; letter-spacing: 7px; color: var(--cinza); }
+  .menu { font-size: 12.5px; letter-spacing: 1px; text-transform: uppercase; color: var(--tinta-2); display: flex; gap: 28px; flex-wrap: wrap; }
+  .menu a { color: inherit; text-decoration: none; padding: 6px 0; border-bottom: 2px solid transparent; }
+  .menu a:hover, .menu a:focus-visible { color: var(--tinta); border-bottom-color: var(--verde); outline: none; }
+
+  .etiqueta { display: inline-block; background: var(--verde); color: #fff; font-size: 12px; font-weight: 500; letter-spacing: 1px;
+              text-transform: uppercase; padding: 4px 18px; border-radius: 50px 50px 50px 0; }
+  .abertura { background: var(--superficie); padding: 34px 0 30px; }
+  .abertura-grade { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 22px 36px; align-items: start; }
+  .abertura h1 { margin: 12px 0 8px; font-size: clamp(28px, 4vw, 40px); line-height: 1.15; font-weight: 700; color: var(--verde); }
+  .abertura p { margin: 0; max-width: 780px; color: var(--tinta-2); }
+  .passos { list-style: none; margin: 20px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px 22px; }
+  .passos li { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; color: var(--tinta-2); line-height: 1.45; }
+  .passos li b { flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--verde); color: #fff; display: grid; place-items: center; font-size: 13px; font-weight: 600; }
+  .passos strong { color: var(--tinta); font-weight: 600; }
+  .quem { background: var(--plano); border-radius: 14px; padding: 16px 18px; border-top: 3px solid var(--verde); }
+  .quem label { font-size: 11px; letter-spacing: .6px; text-transform: uppercase; color: var(--tinta-2); }
+  .quem input { display: block; width: 100%; font: 400 14px var(--fonte); color: var(--tinta); background: #fff; border: 1px solid var(--eixo); border-radius: 18px; padding: 8px 14px; margin-top: 6px; }
+  .quem input:focus { outline: 2px solid var(--verde); outline-offset: 1px; border-color: var(--verde-600); }
+  .quem input.falta { border-color: var(--critico); outline: 2px solid var(--critico); }
+  .quem p { margin: 8px 0 0; font-size: 12px; color: var(--mudo); }
+  @media (max-width: 900px) { .abertura-grade { grid-template-columns: 1fr; } }
+
+  #avisos { display: grid; gap: 10px; padding-top: 16px; }
+  .aviso { display: flex; gap: 10px; align-items: flex-start; background: var(--superficie); border-radius: 12px; padding: 12px 16px; border-left: 4px solid var(--cinza); font-size: 13px; }
+  .aviso.erro { border-left-color: var(--critico); }
+  .aviso.atencao { border-left-color: var(--aviso); }
+  .aviso svg { flex: none; margin-top: 2px; }
+  .aviso p { margin: 0; }
+
+  .filtros { background: var(--superficie); border-top: 1px solid var(--linha); border-bottom: 1px solid var(--linha); margin-top: 16px; }
+  @media (min-width: 1100px) and (min-height: 700px) { .filtros { position: sticky; top: 0; z-index: 5; } }
+  .filtros .largura { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end; padding-top: 12px; padding-bottom: 12px; }
+  .campo { display: flex; flex-direction: column; gap: 3px; font-size: 11px; letter-spacing: .6px; text-transform: uppercase; color: var(--mudo); }
+  .campo select, .campo input { font: 400 13px var(--fonte); color: var(--tinta); background: #fff; border: 1px solid var(--eixo); border-radius: 18px;
+                                padding: 6px 12px; min-width: 120px; height: 34px; }
+  .campo select { max-width: 210px; }
+  .campo input { min-width: 220px; }
+  .campo select:focus, .campo input:focus { outline: 2px solid var(--verde); outline-offset: 1px; border-color: var(--verde-600); }
+  .botao { font: 500 12px var(--fonte); letter-spacing: 1px; text-transform: uppercase; color: #fff; background: var(--cinza); border: 0; cursor: pointer;
+           padding: 9px 20px; border-radius: 50px 50px 0 50px; height: 34px; white-space: nowrap; }
+  .botao:hover, .botao:focus-visible { background: var(--tinta); outline: 2px solid var(--verde); outline-offset: 1px; }
+  .botao.claro { background: #fff; color: var(--tinta); border: 1px solid var(--eixo); }
+  .botao.claro:hover, .botao.claro:focus-visible { background: var(--plano); }
+  .botao.destaque { background: var(--verde); color: var(--tinta); font-weight: 600; }
+  .botao.destaque:hover, .botao.destaque:focus-visible { background: var(--verde-300); outline-color: #fff; }
+
+  main { padding: 26px 0 40px; }
+  .indicadores { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 18px; }
+  .indicador { background: var(--superficie); border-radius: 14px; padding: 16px 18px 14px; border-top: 3px solid var(--verde); }
+  .indicador .rotulo { font-size: 12.5px; color: var(--tinta-2); display: flex; align-items: center; gap: 6px; }
+  .indicador .valor { font-size: 32px; font-weight: 600; line-height: 1.2; color: var(--tinta); margin-top: 2px; }
+  .indicador .nota { font-size: 12px; color: var(--mudo); margin-top: 2px; min-height: 18px; }
+  button.indicador { font: inherit; color: inherit; text-align: left; border-left: 0; border-right: 0; border-bottom: 0; cursor: pointer;
+                     display: flex; flex-direction: column; justify-content: flex-start; }
+  button.indicador:hover, button.indicador:focus-visible { box-shadow: 0 0 0 2px var(--verde-300); outline: none; }
+  button.indicador.ativo { box-shadow: 0 0 0 2px var(--verde-600); }
+
+  .grade { display: grid; grid-template-columns: repeat(12, 1fr); gap: 18px; }
+  .cartao { background: var(--superficie); border-radius: 14px; padding: 18px 20px 20px; grid-column: span 12; min-width: 0; }
+  @media (min-width: 1000px) { .cartao.sete { grid-column: span 7; } .cartao.cinco { grid-column: span 5; } }
+  .cartao h2 { margin: 0; font-size: 17px; font-weight: 600; color: var(--tinta); }
+  .cartao .sub { margin: 2px 0 14px; font-size: 12.5px; color: var(--tinta-2); }
+  .cabeca { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
+  .acoes-lista { display: flex; gap: 12px; align-items: flex-end; margin-bottom: 12px; }
+  .link { font: 500 12px var(--fonte); color: var(--tinta-2); background: none; border: 0; border-bottom: 1px solid var(--eixo); cursor: pointer; padding: 0 0 1px; white-space: nowrap; margin-top: 12px; }
+  .link:hover, .link:focus-visible { color: var(--tinta); border-bottom-color: var(--verde-600); outline: none; }
+
+  .barras { display: grid; grid-template-columns: minmax(120px, 46%) 1fr auto; gap: 9px 12px; align-items: center; }
+  .barras .nome { font-size: 12.5px; color: var(--tinta); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .barras .trilho { height: 16px; display: flex; align-items: center; }
+  .barras .barra { height: 14px; min-width: 2px; background: var(--verde-600); border-radius: 0 4px 4px 0; }
+  .barras .numero { font-size: 12.5px; font-weight: 500; color: var(--tinta); font-variant-numeric: tabular-nums; text-align: right; }
+  .barras .linha { display: contents; cursor: pointer; }
+  .barras .linha:hover .barra, .barras .linha:focus .barra { background: var(--verde-500); }
+  .barras .linha:focus { outline: none; }
+  .barras .linha:focus .nome { text-decoration: underline; text-decoration-color: var(--verde-600); text-underline-offset: 3px; }
+  .barras .linha.ativa .nome { font-weight: 600; }
+  .barras .linha.ativa .nome::before { content: "▸ "; color: var(--verde-600); }
+  .vazio { color: var(--mudo); font-size: 13px; padding: 18px 0; }
+
+  .rolagem { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; }
+  table.dados { font-size: 12.5px; font-variant-numeric: tabular-nums; }
+  table.dados th, table.dados td { padding: 7px 10px; border-bottom: 1px solid var(--linha); text-align: right; white-space: nowrap; }
+  table.dados th, table.dados td { padding-left: 8px; padding-right: 8px; }
+  table.dados th:first-child, table.dados td:first-child { text-align: left; white-space: normal; min-width: 150px; }
+  table.dados th { font-weight: 600; color: var(--tinta-2); font-size: 11px; letter-spacing: .4px; text-transform: uppercase; border-bottom: 2px solid var(--verde); vertical-align: bottom; white-space: normal; }
+  table.dados tbody tr { cursor: pointer; }
+  table.dados tbody tr:hover, table.dados tbody tr:focus { background: #fafbf5; outline: none; }
+  table.dados tbody tr:focus td:first-child { text-decoration: underline; text-decoration-color: var(--verde-600); text-underline-offset: 3px; }
+  table.dados tbody tr.ativa td:first-child { font-weight: 600; box-shadow: inset 3px 0 0 var(--verde-600); }
+  table.dados td.zero { color: var(--eixo); }
+  .progresso { display: inline-flex; align-items: center; gap: 8px; }
+  .progresso .trilho { display: inline-block; width: 56px; height: 8px; background: var(--linha); border-radius: 4px; overflow: hidden; }
+  .progresso .barra { display: block; height: 100%; background: var(--verde-600); }
+  .progresso .pct { min-width: 34px; text-align: right; }
+
+  .selo { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-size: 12.5px; font-weight: 500; color: var(--tinta); }
+  .selo svg, .indicador svg { flex: none; }
+
+  /* processos: uma faixa por processo, dados em cima e campos para preencher embaixo */
+  .processo { border-left: 4px solid var(--eixo); padding: 14px 16px; border-bottom: 1px solid var(--linha); }
+  .processo:first-child { border-top: 1px solid var(--linha); }
+  .processo.atrasado { border-left-color: var(--critico); }
+  .processo.preencher { border-left-color: var(--aviso); }
+  .processo.concluido { border-left-color: var(--bom); }
+  .processo.editado { background: #fbfdf3; }
+  .processo .info { display: flex; flex-wrap: wrap; gap: 8px 22px; align-items: flex-start; font-size: 12.5px; }
+  .processo .info > div { display: flex; flex-direction: column; line-height: 1.4; min-width: 0; }
+  .processo .estado { width: 150px; gap: 3px; }
+  .processo .num { width: 112px; }
+  .processo .num b { font-size: 14px; font-weight: 600; }
+  .processo .assoc { flex: 1 1 210px; }
+  .processo .assoc b { font-weight: 600; }
+  .processo .siga { flex: 1 1 210px; }
+  .processo .dias { width: 84px; }
+  .processo .dias b { font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.2; }
+  .processo .st { width: 150px; }
+  .processo .atual { width: 140px; }
+  .sec { color: var(--tinta-2); }
+  .tag { align-self: flex-start; font-size: 10.5px; letter-spacing: .8px; text-transform: uppercase; background: var(--plano); color: var(--tinta-2);
+         padding: 1px 10px; border-radius: 50px 50px 50px 0; margin-top: 3px; }
+  .marca { font-size: 11.5px; font-weight: 500; }
+  .marca.naosalvo { color: var(--verde-700); }
+  .marca.enviado { color: var(--tinta-2); font-weight: 400; }
+  .processo .campos { display: grid; grid-template-columns: 200px 220px minmax(170px, 1fr) 150px minmax(220px, 1.4fr); gap: 10px 12px; margin-top: 12px; }
+  .processo .c { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .processo .c label { font-size: 10.5px; letter-spacing: .6px; text-transform: uppercase; color: var(--mudo); }
+  .processo select, .processo input, .processo textarea { font: 400 13px/1.4 var(--fonte); color: var(--tinta); background: #fff; border: 1px solid var(--eixo);
+                                                          border-radius: 10px; padding: 6px 10px; width: 100%; min-height: 34px; }
+  .processo textarea { resize: vertical; overflow-y: hidden; display: block; }
+  .processo select:focus, .processo input:focus, .processo textarea:focus { outline: 2px solid var(--verde); outline-offset: 1px; border-color: var(--verde-600); }
+  .processo .alterado { border-color: var(--verde-600); background: #f4f9e3; box-shadow: inset 3px 0 0 var(--verde-600); }
+  @media (max-width: 1080px) { .processo .campos { grid-template-columns: 1fr 1fr; } .processo .c-obs { grid-column: 1 / -1; } }
+  @media (max-width: 560px) { .processo .campos { grid-template-columns: 1fr; } .processo .estado, .processo .num, .processo .st, .processo .atual { width: auto; } }
+  .rodape-lista { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 14px; font-size: 12.5px; color: var(--tinta-2); }
+  .paginas { display: flex; gap: 8px; align-items: center; }
+  .paginas button[disabled] { opacity: .4; cursor: default; }
+
+  ul.historico { list-style: none; margin: 0; padding: 0; }
+  ul.historico li { border-bottom: 1px solid var(--linha); }
+  .hist-item { display: grid; grid-template-columns: 118px 170px minmax(170px, 1fr) minmax(220px, 1.6fr); gap: 2px 16px; width: 100%; text-align: left; background: none; border: 0;
+               padding: 9px 6px; font: 400 12.5px/1.45 var(--fonte); color: var(--tinta); cursor: pointer; }
+  .hist-item:hover, .hist-item:focus-visible { background: #fafbf5; outline: none; }
+  .hist-item:focus-visible .hist-proc { text-decoration: underline; text-decoration-color: var(--verde-600); }
+  .hist-item[disabled] { cursor: default; }
+  .hist-item time { color: var(--tinta-2); font-variant-numeric: tabular-nums; }
+  .hist-item b { font-weight: 600; }
+  .hist-proc { color: var(--tinta-2); }
+  @media (max-width: 820px) { .hist-item { grid-template-columns: 1fr 1fr; } }
+
+  .salvar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 15; background: var(--cinza); color: #fff; box-shadow: 0 -6px 20px rgba(0,0,0,.15); }
+  .salvar .largura { display: flex; justify-content: space-between; align-items: center; gap: 10px 20px; flex-wrap: wrap; padding-top: 12px; padding-bottom: 12px; }
+  .estado-salvar { display: flex; flex-direction: column; gap: 2px; font-size: 13px; min-width: 0; flex: 1 1 360px; }
+  #pendentes { font-weight: 600; }
+  #mensagem { color: #eeeded; }
+  #mensagem.erro { color: #ffd6c7; font-weight: 500; }
+  .salvar .acoes { display: flex; gap: 10px; flex-wrap: wrap; }
+  .salvar .botao.claro { background: transparent; color: #fff; border-color: #8c898a; }
+  .salvar .botao.claro:hover, .salvar .botao.claro:focus-visible { background: rgba(255,255,255,.08); }
+
+  #dica { position: fixed; z-index: 20; pointer-events: none; background: var(--tinta); color: #fff; border-radius: 8px; padding: 8px 12px; font-size: 12px; line-height: 1.45;
+          max-width: 300px; box-shadow: 0 6px 20px rgba(0,0,0,.18); opacity: 0; transition: opacity .08s; }
+  #dica.visivel { opacity: 1; }
+  #dica b { display: block; font-size: 15px; font-weight: 600; }
+  #dica span { display: block; color: #dedcdc; }
+
+  footer { background: var(--cinza); color: #e9e8e8; font-size: 12.5px; padding: 22px 0; }
+  footer .largura { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  footer b { color: #fff; font-weight: 600; }
+  @media (max-width: 640px) { .largura { padding: 0 16px; } .menu { display: none; } .campo input { min-width: 0; width: 100%; } .campo { flex: 1 1 140px; } }
+  @media print { .filtros, .paginas, .botao, .link, .salvar, #avisos, .quem { display: none !important; } body { background: #fff; } }
+</style>
+</head>
+<body>
+<div class="topo"><div class="largura">
+  <span>Rotina do sinistro · <strong>Acompanhamento dos analistas</strong></span>
+  <span>Atualizado em <strong id="gerado"></strong></span>
+</div></div>
+<header class="marca"><div class="largura">
+  <div class="logo" id="logo"></div>
+  <nav class="menu" aria-label="Seções">
+    <a href="#resumo">Resumo</a><a href="#por-analista">Por analista</a><a href="#processos">Processos</a><a href="#historico">Últimas alterações</a>
+  </nav>
+</div></header>
+
+<section class="abertura"><div class="largura abertura-grade">
+  <div>
+    <span class="etiqueta">Analistas</span>
+    <h1>Acompanhamento dos processos</h1>
+    <p>Processos das listas ANALISTAS e VIDROS. Para cada um, informe a situação, a próxima ação e o prazo. O painel mostra o que está em dia, o que está atrasado e o que ainda falta preencher.</p>
+    <ol class="passos">
+      <li><b>1</b><span>Escreva seu nome em <strong>Quem está preenchendo</strong>.</span></li>
+      <li><b>2</b><span>Preencha os processos. O que você muda fica marcado como <strong>não salvo</strong>.</span></li>
+      <li><b>3</b><span>Clique em <strong>Salvar alterações</strong> e salve o arquivo na pasta <strong>ENTRADA</strong> do sistema. Ele entra na próxima atualização.</span></li>
+    </ol>
+  </div>
+  <div class="quem">
+    <label for="quem">Quem está preenchendo</label>
+    <input id="quem" list="pessoas" autocomplete="off" placeholder="Seu nome" maxlength="80">
+    <datalist id="pessoas"></datalist>
+    <p>Vai junto com cada alteração, para a equipe saber quem atualizou cada processo.</p>
+  </div>
+</div></section>
+
+<div class="largura" id="avisos" hidden></div>
+
+<section class="filtros" aria-label="Filtros"><div class="largura">
+  <label class="campo">Lista <select id="f-lista"></select></label>
+  <label class="campo">Analista <select id="f-analista"></select></label>
+  <label class="campo">Situação <select id="f-situacao"></select></label>
+  <label class="campo">Pendência <select id="f-pend"></select></label>
+  <label class="campo">Buscar <input id="f-busca" type="search" placeholder="protocolo, nome ou placa"></label>
+  <button class="botao claro" id="limpar" type="button">Limpar filtros</button>
+</div></section>
+
+<main><div class="largura">
+  <div class="indicadores" id="resumo"></div>
+  <div class="grade">
+    <section class="cartao cinco">
+      <h2>Por situação</h2>
+      <p class="sub">Situação informada pelos analistas. Clique para ver os processos.</p>
+      <div id="graf-situacao"></div>
+    </section>
+    <section class="cartao sete" id="por-analista">
+      <h2>Por analista</h2>
+      <p class="sub">Analista informado ou, em branco, o responsável no SIGA. Clique para filtrar.</p>
+      <div class="rolagem" id="tab-analistas"></div>
+    </section>
+    <section class="cartao" id="processos">
+      <div class="cabeca"><div><h2>Processos</h2><p class="sub" id="lista-sub"></p></div>
+        <div class="acoes-lista"><label class="campo">Ordenar <select id="f-ordem"></select></label>
+        <button class="botao claro" id="exportar" type="button">Exportar CSV</button></div></div>
+      <div id="lista"></div>
+      <div class="rodape-lista"><span id="lista-info"></span>
+        <span class="paginas"><button class="botao claro" id="pag-ant" type="button">Anterior</button><span id="pag-num"></span><button class="botao claro" id="pag-prox" type="button">Próxima</button></span></div>
+    </section>
+    <section class="cartao" id="historico">
+      <h2>Últimas alterações</h2>
+      <p class="sub">O que já entrou no sistema, da mais recente para a mais antiga. Clique para ver o processo.</p>
+      <ul class="historico" id="hist"></ul>
+      <button class="link" id="hist-mais" type="button" hidden>Mostrar mais</button>
+    </section>
+  </div>
+</div></main>
+
+<footer><div class="largura">
+  <span><b>Grupo Support</b> · uso interno · contém dados de associados</span>
+  <span id="fonte"></span>
+</div></footer>
+
+<div class="salvar" id="barra" hidden><div class="largura">
+  <div class="estado-salvar"><span id="pendentes"></span><span id="mensagem" role="status" aria-live="polite"></span></div>
+  <div class="acoes">
+    <button class="botao claro" id="descartar" type="button">Descartar</button>
+    <button class="botao destaque" id="salvar" type="button">Salvar alterações</button>
+    <button class="botao claro" id="fechar-msg" type="button">OK</button>
+  </div>
+</div></div>
+<div id="dica" role="status" aria-live="polite"></div>
+
+<script id="dados" type="application/json">__DADOS__</script>
+<script>
+(() => {
+  "use strict";
+  const D = JSON.parse(document.getElementById("dados").textContent);
+  const P = { lista: 0, prot: 1, sga: 2, nome: 3, placa: 4, evento: 5, tarefa: 6, resp: 7, abertura: 8, stSga: 9, stSiga: 10,
+              analista: 11, situacao: 12, proxima: 13, prazo: 14, obs: 15, atualEm: 16, atualPor: 17 };
+  const CAMPOS = { analista: { rotulo: "Analista", col: P.analista }, situacao: { rotulo: "Situação", col: P.situacao },
+                   proxima: { rotulo: "Próxima ação", col: P.proxima }, prazo: { rotulo: "Prazo", col: P.prazo }, obs: { rotulo: "Observação", col: P.obs } };
+  const NOMES_CAMPOS = Object.keys(CAMPOS);
+  const PEND = {
+    "PREENCHER": { rotulo: "A preencher", plural: "A preencher", classe: "preencher", cor: "var(--aviso)", icone: "M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25Zm17.71-10.21a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83Z" },
+    "ATRASADO": { rotulo: "Atrasado", plural: "Atrasados", classe: "atrasado", cor: "var(--critico)", icone: "M12 2 1.5 20.5h21L12 2Zm-1.1 6.6h2.2v6h-2.2v-6Zm1.1 7.4a1.3 1.3 0 1 1 0 2.6 1.3 1.3 0 0 1 0-2.6Z" },
+    "EM DIA": { rotulo: "Em dia", plural: "Em dia", classe: "emdia", cor: "var(--cinza)", icone: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 2.2a7.8 7.8 0 1 1 0 15.6 7.8 7.8 0 0 1 0-15.6ZM11 6.5v6.1l4.6 2.8 1.1-1.8-3.5-2.1V6.5H11Z" },
+    "CONCLUÍDO": { rotulo: "Concluído", plural: "Concluídos", classe: "concluido", cor: "var(--bom)", icone: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.4 14.2-4.2-4.2 1.5-1.5 2.7 2.7 5.9-5.9 1.5 1.5-7.4 7.4Z" },
+  };
+  const AVISO = {
+    erro: { cor: "var(--critico)", icone: PEND["ATRASADO"].icone },
+    atencao: { cor: "var(--aviso)", icone: PEND["ATRASADO"].icone },
+    info: { cor: "var(--cinza)", icone: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.1 8.4h2.2v7h-2.2v-7Zm1.1-4.1a1.3 1.3 0 1 1 0 2.6 1.3 1.3 0 0 1 0-2.6Z" },
+  };
+  const ORDEM_PEND = { "ATRASADO": 0, "PREENCHER": 1, "EM DIA": 2, "CONCLUÍDO": 3 };
+  const nf = new Intl.NumberFormat("pt-BR");
+  const pct = (a, b) => (b ? Math.round(100 * a / b) + "%" : "–");
+  const pad = (n) => String(n).padStart(2, "0");
+  const isoDia = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const agora = () => { const d = new Date(); return `${isoDia(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`; };
+  const HOJE = isoDia(new Date());
+  const dataBr = (iso) => (iso ? iso.slice(8, 10) + "/" + iso.slice(5, 7) + "/" + iso.slice(0, 4) : "");
+  const momentoBr = (iso) => (iso ? dataBr(iso) + (iso.length > 10 ? " " + iso.slice(11, 16) : "") : "");
+  const diaUtc = (iso) => Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10));
+  const diasEntre = (a, b) => Math.round((diaUtc(b) - diaUtc(a)) / 864e5);
+  const semAcento = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase();
+  const norm = (s) => String(s ?? "").replace(/\r\n/g, "\n").trim();
+  const plural = (n, um, varios) => nf.format(n) + " " + (n === 1 ? um : varios);
+  const campo = (id) => document.getElementById(id);
+
+  function el(tag, atributos, texto) {
+    const e = document.createElement(tag);
+    for (const k in atributos || {}) { if (k === "class") e.className = atributos[k]; else e.setAttribute(k, atributos[k]); }
+    if (texto !== undefined && texto !== null) e.textContent = texto;   // tudo o que vem dos dados entra como texto
+    return e;
+  }
+  function svgIcone(d, cor, tamanho) {
+    const ns = "http://www.w3.org/2000/svg";
+    const s = document.createElementNS(ns, "svg");
+    s.setAttribute("viewBox", "0 0 24 24"); s.setAttribute("width", tamanho || 15); s.setAttribute("height", tamanho || 15); s.setAttribute("aria-hidden", "true");
+    const p = document.createElementNS(ns, "path"); p.setAttribute("d", d); p.setAttribute("fill", cor);
+    s.appendChild(p);
+    return s;
+  }
+  const icone = (k, tamanho) => svgIcone(PEND[k].icone, PEND[k].cor, tamanho);
+  function selo(k) { const s = el("span", { class: "selo" }); s.append(icone(k), el("span", null, PEND[k].rotulo)); return s; }
+  function aoAtivar(alvo, acao) {
+    alvo.addEventListener("click", acao);
+    alvo.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); acao(); } });
+  }
+
+  // ---------------------------------------------------------------- dica (hover e foco mostram o mesmo)
+  const dica = campo("dica");
+  function mostrarDica(alvo, valor, linhas, evento) {
+    dica.replaceChildren(el("b", null, valor), ...linhas.map((t) => el("span", null, t)));
+    const r = alvo.getBoundingClientRect();
+    const x = evento && evento.clientX ? evento.clientX : r.left + r.width / 2;
+    const y = evento && evento.clientY ? evento.clientY : r.top;
+    dica.classList.add("visivel");
+    const d = dica.getBoundingClientRect();
+    dica.style.left = Math.max(8, Math.min(window.innerWidth - d.width - 8, x + 14)) + "px";
+    dica.style.top = Math.max(8, y - d.height - 12) + "px";
+  }
+  const esconderDica = () => dica.classList.remove("visivel");
+  function comDica(alvo, conteudo) {
+    alvo.addEventListener("pointermove", (e) => { const [v, l] = conteudo(); mostrarDica(alvo, v, l, e); });
+    alvo.addEventListener("pointerleave", esconderDica);
+    alvo.addEventListener("focus", () => { const [v, l] = conteudo(); mostrarDica(alvo, v, l); });
+    alvo.addEventListener("blur", esconderDica);
+  }
+
+  // ---------------------------------------------------------------- processos e o que foi preenchido neste computador
+  const PROCS = D.processos.map((l) => ({
+    l, prot: l[P.prot], dias: l[P.abertura] ? diasEntre(l[P.abertura], HOJE) : null,
+    busca: semAcento([l[P.prot], l[P.sga], l[P.nome], l[P.placa], l[P.placa].replace(/-/g, "")].join(" ")),
+  }));
+  const porProt = new Map(PROCS.map((p) => [p.prot, p]));
+
+  // rascunho = alterado e ainda não salvo; enviados = salvo em arquivo, esperando a próxima atualização
+  const CHAVE = "grupo-support:acompanhamento-analistas";
+  let guardando = true;
+  function lerEstado() {
+    try {
+      const e = JSON.parse(localStorage.getItem(CHAVE) || "{}");
+      return { nome: typeof e.nome === "string" ? e.nome : "", rascunho: e.rascunho && typeof e.rascunho === "object" ? e.rascunho : {},
+               enviados: Array.isArray(e.enviados) ? e.enviados : [] };
+    } catch (_) { return { nome: "", rascunho: {}, enviados: [] }; }
+  }
+  function guardar() { try { localStorage.setItem(CHAVE, JSON.stringify(E)); guardando = true; } catch (_) { guardando = false; } }
+  const E = lerEstado();
+  const chave = (p, c) => p.prot + "|" + c;
+  const original = (p, c) => p.l[CAMPOS[c].col] || "";
+  let ENVIADOS = new Map();
+  function mapearEnviados() { ENVIADOS = new Map(); for (const env of E.enviados) for (const r of env.alteracoes || []) ENVIADOS.set(r.p + "|" + r.c, r); }
+  const valorBase = (p, c) => { const s = ENVIADOS.get(chave(p, c)); return s ? s.v : original(p, c); };
+  const valor = (p, c) => { const r = E.rascunho[chave(p, c)]; return r ? r.v : valorBase(p, c); };
+  const temRascunho = (p) => NOMES_CAMPOS.some((c) => E.rascunho[chave(p, c)]);
+  const temEnviado = (p) => NOMES_CAMPOS.some((c) => ENVIADOS.has(chave(p, c)));
+  function pendencia(p) {
+    const s = norm(valor(p, "situacao"));
+    if (!s) return "PREENCHER";
+    if (s === D.concluido) return "CONCLUÍDO";
+    const z = valor(p, "prazo");
+    return z && z < HOJE ? "ATRASADO" : "EM DIA";
+  }
+  const analistaDe = (p) => norm(valor(p, "analista")) || p.l[P.resp] || "(sem responsável)";
+
+  // O que foi salvo antes: some quando a página refeita já trouxe o arquivo; volta para "não salvo"
+  // quando a página foi refeita depois e o arquivo não entrou (não chegou à pasta ENTRADA).
+  const voltaram = [];
+  (function conciliar() {
+    const incorporados = new Set(D.arquivos || []);
+    E.enviados = E.enviados.filter((env) => {
+      if (!env || incorporados.has(env.id)) return false;
+      if (D.gerado_iso > String(env.salvo_em)) {
+        for (const r of env.alteracoes || []) {
+          const p = porProt.get(r.p);
+          if (!p || !CAMPOS[r.c]) continue;
+          const atual = original(p, r.c);
+          if (norm(atual) === norm(r.a) && norm(atual) !== norm(r.v) && !E.rascunho[chave(p, r.c)]) { E.rascunho[chave(p, r.c)] = r; voltaram.push(r); }
+        }
+        return false;
+      }
+      return true;
+    });
+    mapearEnviados();
+    for (const k of Object.keys(E.rascunho)) {
+      const r = E.rascunho[k], p = r && porProt.get(r.p);
+      if (!p || !CAMPOS[r.c] || norm(r.v) === norm(valorBase(p, r.c))) delete E.rascunho[k];
+    }
+    guardar();
+  })();
+
+  function registrar(p, c, v) {
+    const k = chave(p, c);
+    if (norm(v) === norm(valorBase(p, c))) delete E.rascunho[k];
+    else E.rascunho[k] = { p: p.prot, l: p.l[P.lista], c, v: String(v), a: original(p, c), em: agora() };
+    guardar();
+  }
+
+  // ---------------------------------------------------------------- filtros
+  const F = { lista: "", analista: "", situacao: null, pend: "", ordem: "prioridade", busca: "" };
+  function opcoes(select, pares) { select.replaceChildren(...pares.map(([v, t]) => el("option", { value: v }, t))); }
+  const NOMES_ANALISTAS = [...new Set([...PROCS.map(analistaDe), ...D.analistas])].sort((a, b) => a.localeCompare(b, "pt-BR"));
+  opcoes(campo("f-lista"), [["", "Todas"], ["ANALISTAS", "Analistas"], ["VIDROS", "Vidros"]]);
+  opcoes(campo("f-analista"), [["", "Todos"], ...NOMES_ANALISTAS.map((n) => [n, n])]);
+  opcoes(campo("f-situacao"), [["*", "Todas"], ["", "(não preenchida)"], ...D.situacoes.map((s) => [s, s])]);
+  opcoes(campo("f-pend"), [["", "Todas"], ["acao", "Precisam de ação"], ["ATRASADO", "Atrasados"], ["PREENCHER", "A preencher"], ["EM DIA", "Em dia"],
+    ["CONCLUÍDO", "Concluídos"], ["naosalvo", "Com alterações não salvas"]]);
+  opcoes(campo("f-ordem"), [["prioridade", "Prioridade"], ["antigos", "Mais antigos primeiro"], ["prazo", "Prazo mais próximo"],
+    ["recentes", "Atualizados por último"], ["protocolo", "Protocolo"]]);
+  function refletirFiltros() {
+    const a = campo("f-analista");
+    if (F.analista && ![...a.options].some((o) => o.value === F.analista)) a.append(el("option", { value: F.analista }, F.analista));
+    campo("f-lista").value = F.lista; a.value = F.analista;
+    campo("f-situacao").value = F.situacao === null ? "*" : F.situacao;
+    campo("f-pend").value = F.pend; campo("f-ordem").value = F.ordem; campo("f-busca").value = F.busca;
+  }
+  function lerFiltros() {
+    F.lista = campo("f-lista").value; F.analista = campo("f-analista").value;
+    F.situacao = campo("f-situacao").value === "*" ? null : campo("f-situacao").value;
+    F.pend = campo("f-pend").value; F.ordem = campo("f-ordem").value; F.busca = campo("f-busca").value.trim();
+  }
+  for (const id of ["f-lista", "f-analista", "f-situacao", "f-pend", "f-ordem"]) campo(id).addEventListener("change", () => { lerFiltros(); atualizar(); });
+  let espera = 0;
+  campo("f-busca").addEventListener("input", () => { clearTimeout(espera); espera = setTimeout(() => { lerFiltros(); atualizar(); }, 180); });
+  campo("limpar").addEventListener("click", () => { Object.assign(F, { lista: "", analista: "", situacao: null, pend: "", busca: "" }); refletirFiltros(); atualizar(); });
+
+  // recorte = lista, analista e busca (o painel mostra a situação e a pendência dentro dele)
+  function recorte(comAnalista) {
+    const termo = semAcento(F.busca);
+    return PROCS.filter((p) => (!F.lista || p.l[P.lista] === F.lista) && (!comAnalista || !F.analista || analistaDe(p) === F.analista)
+      && (!termo || p.busca.includes(termo)));
+  }
+  function filtrar() {
+    return recorte(true).filter((p) => {
+      if (F.situacao !== null && norm(valor(p, "situacao")) !== F.situacao) return false;
+      if (F.pend === "acao") return ["ATRASADO", "PREENCHER"].includes(pendencia(p));
+      if (F.pend === "naosalvo") return temRascunho(p);
+      return !F.pend || pendencia(p) === F.pend;
+    });
+  }
+  const rolarLista = () => campo("processos").scrollIntoView({ behavior: "smooth", block: "start" });
+
+  // ---------------------------------------------------------------- indicadores
+  function indicadores(rec) {
+    const n = { "PREENCHER": 0, "ATRASADO": 0, "EM DIA": 0, "CONCLUÍDO": 0 };
+    for (const p of rec) n[pendencia(p)]++;
+    const total = rec.length, vidros = rec.filter((p) => p.l[P.lista] === "VIDROS").length;
+    const limite = isoDia(new Date(Date.now() - 7 * 864e5));
+    const semana = (D.historico || []).filter((h) => h[0] >= limite).length;
+    const fixo = (rotulo, valor, nota) => { const t = el("div", { class: "indicador" }); t.append(el("div", { class: "rotulo" }, rotulo), el("div", { class: "valor" }, valor), el("div", { class: "nota" }, nota)); return t; };
+    const itens = [fixo("Processos", nf.format(total), `${nf.format(total - vidros)} analistas · ${nf.format(vidros)} vidros`)];
+    for (const k of ["PREENCHER", "ATRASADO", "EM DIA", "CONCLUÍDO"]) {
+      const ativo = F.pend === k;
+      const b = el("button", { type: "button", class: "indicador" + (ativo ? " ativo" : ""), "aria-pressed": String(ativo) });
+      const rotulo = el("div", { class: "rotulo" }); rotulo.append(icone(k), el("span", null, PEND[k].plural));
+      b.append(rotulo, el("div", { class: "valor" }, nf.format(n[k])), el("div", { class: "nota" }, ativo ? "filtrando a lista · clique para tirar" : pct(n[k], total) + " dos processos"));
+      b.addEventListener("click", () => { F.pend = ativo ? "" : k; refletirFiltros(); atualizar(); });
+      itens.push(b);
+    }
+    itens.push(fixo("Preenchidos", pct(total - n["PREENCHER"], total), plural(semana, "alteração", "alterações") + " nos últimos 7 dias"));
+    campo("resumo").replaceChildren(...itens);
+  }
+
+  // ---------------------------------------------------------------- por situação (barras de uma cor)
+  function situacoes(rec) {
+    const caixa = campo("graf-situacao");
+    const n = new Map();
+    for (const p of rec) { const s = norm(valor(p, "situacao")); n.set(s, (n.get(s) || 0) + 1); }
+    const nomes = [...D.situacoes, ...[...n.keys()].filter((s) => s && !D.situacoes.includes(s))];
+    const itens = [...nomes.map((s) => ({ chave: s, nome: s, valor: n.get(s) || 0 })), { chave: "", nome: "Não preenchida", valor: n.get("") || 0 }];
+    if (!rec.length) { caixa.replaceChildren(el("div", { class: "vazio" }, "Nenhum processo com os filtros atuais.")); return; }
+    const max = Math.max(...itens.map((i) => i.valor), 1);
+    const grade = el("div", { class: "barras" });
+    for (const item of itens) {
+      const linha = el("div", { class: "linha" + (F.situacao === item.chave ? " ativa" : ""), tabindex: "0", role: "button",
+                                "aria-label": `${item.nome}: ${item.valor} processos. Filtrar a lista` });
+      const trilho = el("div", { class: "trilho" }), barra = el("div", { class: "barra" });
+      barra.style.width = (100 * item.valor / max) + "%";
+      if (!item.valor) barra.style.visibility = "hidden";
+      trilho.append(barra);
+      linha.append(el("div", { class: "nome", title: item.nome }, item.nome), trilho, el("div", { class: "numero" }, nf.format(item.valor)));
+      comDica(linha, () => [plural(item.valor, "processo", "processos"), [item.nome, pct(item.valor, rec.length) + " dos processos filtrados"]]);
+      aoAtivar(linha, () => { F.situacao = F.situacao === item.chave ? null : item.chave; refletirFiltros(); atualizar(); rolarLista(); });
+      grade.append(linha);
+    }
+    caixa.replaceChildren(grade);
+  }
+
+  // ---------------------------------------------------------------- por analista (tabela)
+  function analistas(rec) {
+    const caixa = campo("tab-analistas");
+    const m = new Map();
+    for (const p of rec) {
+      const a = analistaDe(p);
+      const o = m.get(a) || { total: 0, "PREENCHER": 0, "ATRASADO": 0, "EM DIA": 0, "CONCLUÍDO": 0 };
+      o.total++; o[pendencia(p)]++; m.set(a, o);
+    }
+    if (!m.size) { caixa.replaceChildren(el("div", { class: "vazio" }, "Nenhum processo com os filtros atuais.")); return; }
+    const t = el("table", { class: "dados" });
+    const cab = el("tr");
+    for (const nome of ["Analista", "Processos", "A preencher", "Atrasados", "Em dia", "Concluídos", "Preenchido"]) cab.append(el("th", { scope: "col" }, nome));
+    t.appendChild(el("thead")).append(cab);
+    const corpo = t.appendChild(el("tbody"));
+    for (const [nome, o] of [...m.entries()].sort((a, b) => b[1].total - a[1].total || a[0].localeCompare(b[0], "pt-BR"))) {
+      const tr = el("tr", { tabindex: "0", role: "button", class: F.analista === nome ? "ativa" : "", "aria-label": `${nome}: ${o.total} processos. Filtrar a lista` });
+      tr.append(el("td", null, nome), el("td", null, nf.format(o.total)));
+      for (const k of ["PREENCHER", "ATRASADO", "EM DIA", "CONCLUÍDO"]) tr.append(el("td", o[k] ? null : { class: "zero" }, nf.format(o[k])));
+      const feitos = o.total - o["PREENCHER"];
+      const prog = el("span", { class: "progresso" }), trilho = el("span", { class: "trilho" }), barra = el("span", { class: "barra" });
+      barra.style.width = (100 * feitos / o.total) + "%"; trilho.append(barra);
+      prog.append(trilho, el("span", { class: "pct" }, pct(feitos, o.total)));
+      const td = el("td"); td.append(prog); tr.append(td);
+      aoAtivar(tr, () => { F.analista = F.analista === nome ? "" : nome; refletirFiltros(); atualizar(); rolarLista(); });
+      corpo.append(tr);
+    }
+    caixa.replaceChildren(t);
+  }
+
+  // ---------------------------------------------------------------- lista de processos para preencher
+  const POR_PAGINA = 25;
+  const lista = { pagina: 0, itens: [] };
+  const caixaLista = campo("lista");
+  function crescer(t) { t.style.height = "auto"; const h = t.scrollHeight + 2; t.style.height = Math.min(h, 220) + "px"; t.style.overflowY = h > 220 ? "auto" : "hidden"; }
+  function controle(p, c) {
+    const id = "c-" + p.prot.replace(/[^0-9A-Za-z]/g, "_") + "-" + c;
+    const caixa = el("div", { class: "c c-" + c });
+    caixa.append(el("label", { for: id }, CAMPOS[c].rotulo));
+    const v = valor(p, c);
+    let ctl;
+    if (c === "analista") {
+      ctl = el("select", { id, "data-campo": c });
+      const nomes = [...D.analistas]; if (v && !nomes.includes(v)) nomes.unshift(v);
+      ctl.append(el("option", { value: "" }, "Responsável no SIGA"), ...nomes.map((n) => el("option", { value: n }, n)));
+    } else if (c === "situacao") {
+      ctl = el("select", { id, "data-campo": c });
+      const nomes = [...D.situacoes]; if (v && !nomes.includes(v)) nomes.push(v);
+      ctl.append(el("option", { value: "" }, "Escolha a situação"), ...nomes.map((s) => el("option", { value: s }, s)));
+    } else if (c === "prazo") {
+      ctl = el("input", { id, "data-campo": c, type: "date", min: "2020-01-01", max: "2099-12-31" });
+    } else if (c === "obs") {
+      ctl = el("textarea", { id, "data-campo": c, rows: "1", maxlength: "2000", placeholder: "Anotações do processo" });
+    } else {
+      ctl = el("input", { id, "data-campo": c, type: "text", maxlength: "300", placeholder: "O que falta fazer" });
+    }
+    ctl.value = v;
+    caixa.append(ctl);
+    return caixa;
+  }
+  function item(p) {
+    const art = el("article", { "data-prot": p.prot });
+    const info = el("div", { class: "info" });
+    const estado = el("div", { class: "estado" }); estado.append(el("span", { class: "selo" }), el("span", { class: "marca" }));
+    const num = el("div", { class: "num" });
+    num.append(el("b", null, p.prot), el("span", { class: "sec" }, p.l[P.sga] ? "SGA " + p.l[P.sga] : "sem protocolo SGA"));
+    if (p.l[P.lista] === "VIDROS") num.append(el("span", { class: "tag" }, "Vidros"));
+    const assoc = el("div", { class: "assoc" });
+    assoc.append(el("b", null, p.l[P.nome] || "(sem nome)"), el("span", { class: "sec" }, [p.l[P.placa], p.l[P.evento]].filter(Boolean).join(" · ")));
+    const siga = el("div", { class: "siga" });
+    siga.append(el("span", null, p.l[P.tarefa] || "(sem tarefa)"), el("span", { class: "sec" }, "Responsável no SIGA: " + (p.l[P.resp] || "—")));
+    const dias = el("div", { class: "dias" });
+    dias.append(el("b", null, p.dias === null ? "–" : nf.format(p.dias)), el("span", { class: "sec" }, p.dias === 1 ? "dia em aberto" : "dias em aberto"));
+    const st = el("div", { class: "st" });
+    st.append(el("span", { class: "sec" }, "SIGA: " + (p.l[P.stSiga] || "—")), el("span", { class: "sec" }, "SGA: " + (p.l[P.stSga] || "—")));
+    info.append(estado, num, assoc, siga, dias, st, el("div", { class: "atual" }));
+    const campos = el("div", { class: "campos" });
+    for (const c of NOMES_CAMPOS) campos.append(controle(p, c));
+    art.append(info, campos);
+    pintar(art, p);
+    return art;
+  }
+  function pintar(art, p) {   // o que muda enquanto o analista preenche
+    const pend = pendencia(p), editado = temRascunho(p);
+    art.className = "processo " + PEND[pend].classe + (editado ? " editado" : "");
+    art.querySelector(".estado .selo").replaceWith(selo(pend));
+    const marca = art.querySelector(".marca");
+    if (editado) { marca.className = "marca naosalvo"; marca.textContent = "não salvo"; }
+    else if (temEnviado(p)) { marca.className = "marca enviado"; marca.textContent = "salvo · entra na próxima atualização"; }
+    else { marca.className = "marca"; marca.textContent = ""; }
+    for (const ctl of art.querySelectorAll("[data-campo]")) ctl.classList.toggle("alterado", !!E.rascunho[chave(p, ctl.dataset.campo)]);
+    const em = p.l[P.atualEm], por = p.l[P.atualPor];
+    art.querySelector(".atual").replaceChildren(...(em
+      ? [el("span", { class: "sec" }, "Atualizado em"), el("span", null, momentoBr(em)), el("span", { class: "sec" }, por ? "por " + por : "")]
+      : [el("span", { class: "sec" }, "Ainda não atualizado")]));
+  }
+  const COMPARAR = {
+    prioridade: (a, b) => ORDEM_PEND[pendencia(a)] - ORDEM_PEND[pendencia(b)] || (b.dias ?? -1) - (a.dias ?? -1),
+    antigos: (a, b) => (b.dias ?? -1) - (a.dias ?? -1),
+    prazo: (a, b) => (valor(a, "prazo") || "9999").localeCompare(valor(b, "prazo") || "9999") || ORDEM_PEND[pendencia(a)] - ORDEM_PEND[pendencia(b)],
+    recentes: (a, b) => (b.l[P.atualEm] || "").localeCompare(a.l[P.atualEm] || ""),
+    protocolo: (a, b) => a.prot.localeCompare(b.prot, "pt-BR", { numeric: true }),
+  };
+  function desenharLista() {
+    const itens = filtrar().sort(COMPARAR[F.ordem] || COMPARAR.prioridade);
+    lista.itens = itens;
+    const paginas = Math.max(1, Math.ceil(itens.length / POR_PAGINA));
+    lista.pagina = Math.min(lista.pagina, paginas - 1);
+    const inicio = lista.pagina * POR_PAGINA, pagina = itens.slice(inicio, inicio + POR_PAGINA);
+    caixaLista.replaceChildren(...pagina.map(item));
+    if (!pagina.length) caixaLista.append(el("div", { class: "vazio" }, "Nenhum processo com os filtros atuais."));
+    for (const t of caixaLista.querySelectorAll("textarea")) if (t.value) crescer(t);
+    campo("lista-info").textContent = itens.length ? `Mostrando ${nf.format(inicio + 1)}–${nf.format(inicio + pagina.length)} de ${nf.format(itens.length)}` : "";
+    campo("pag-num").textContent = `${lista.pagina + 1} / ${paginas}`;
+    campo("pag-ant").disabled = lista.pagina === 0; campo("pag-prox").disabled = lista.pagina >= paginas - 1;
+    campo("lista-sub").textContent = `${nf.format(itens.length)} de ${nf.format(PROCS.length)} processos, conforme os filtros acima.`;
+  }
+  campo("pag-ant").addEventListener("click", () => { lista.pagina--; desenharLista(); rolarLista(); });
+  campo("pag-prox").addEventListener("click", () => { lista.pagina++; desenharLista(); rolarLista(); });
+  function aoEditar(e, terminou) {
+    const ctl = e.target.closest("[data-campo]");
+    if (!ctl) return;
+    const art = ctl.closest("article"), p = porProt.get(art.dataset.prot);
+    if (!p) return;
+    if (ctl.tagName === "TEXTAREA") crescer(ctl);
+    registrar(p, ctl.dataset.campo, ctl.value);
+    pintar(art, p);
+    if (terminou) resumo();
+    barra();
+  }
+  caixaLista.addEventListener("input", (e) => aoEditar(e, false));
+  caixaLista.addEventListener("change", (e) => aoEditar(e, true));
+
+  campo("exportar").addEventListener("click", () => {
+    const aspas = (v) => '"' + String(v ?? "").replace(/"/g, '""') + '"';
+    const cab = ["Lista", "Protocolo SIGA", "Protocolo SGA", "Nome", "Placa", "Evento", "Tarefa no SIGA", "Responsável no SIGA", "Abertura", "Dias em aberto",
+                 "Status SIGA", "Status SGA", "Analista", "Situação", "Próxima ação", "Prazo", "Observação", "Pendência", "Atualizado em", "Atualizado por"];
+    const linhas = [cab.map(aspas).join(";")];
+    for (const p of lista.itens) {
+      const l = p.l;
+      linhas.push([l[P.lista], l[P.prot], l[P.sga], l[P.nome], l[P.placa], l[P.evento], l[P.tarefa], l[P.resp], dataBr(l[P.abertura]), p.dias ?? "",
+                   l[P.stSiga], l[P.stSga], valor(p, "analista"), valor(p, "situacao"), valor(p, "proxima"), dataBr(valor(p, "prazo")), valor(p, "obs"),
+                   PEND[pendencia(p)].rotulo, momentoBr(l[P.atualEm]), l[P.atualPor]].map(aspas).join(";"));
+    }
+    const a = el("a", { href: URL.createObjectURL(new Blob(["﻿" + linhas.join("\r\n")], { type: "text/csv;charset=utf-8" })), download: "acompanhamento-analistas.csv" });
+    document.body.append(a); a.click(); a.remove();
+  });
+
+  // ---------------------------------------------------------------- últimas alterações (o que já entrou no sistema)
+  let histMostrar = 15;
+  const curto = (c, v) => (!v ? "(vazio)" : c === "prazo" ? dataBr(v) : v.length > 90 ? v.slice(0, 88) + "…" : v);
+  function mudanca(c, de, para) {
+    const r = CAMPOS[c] ? CAMPOS[c].rotulo : c;
+    if (!de) return `${r}: ${curto(c, para)}`;
+    if (!para) return `${r}: apagou “${curto(c, de)}”`;
+    return `${r}: ${curto(c, de)} → ${curto(c, para)}`;
+  }
+  function historico() {
+    const H = D.historico || [], caixa = campo("hist");
+    if (!H.length) {
+      caixa.replaceChildren(el("li", { class: "vazio" }, "Nenhuma alteração registrada ainda. Assim que os primeiros arquivos salvos entrarem no sistema, elas aparecem aqui."));
+      campo("hist-mais").hidden = true;
+      return;
+    }
+    caixa.replaceChildren(...H.slice(0, histMostrar).map(([em, quem, prot, , c, de, para]) => {
+      const p = porProt.get(prot);
+      const b = el("button", { type: "button", class: "hist-item" });
+      b.append(el("time", { datetime: em }, momentoBr(em)), el("b", null, quem || "(sem nome)"),
+               el("span", { class: "hist-proc" }, "Processo " + prot + (p && p.l[P.nome] ? " · " + p.l[P.nome] : "")), el("span", null, mudanca(c, de, para)));
+      if (p) b.addEventListener("click", () => { Object.assign(F, { lista: "", analista: "", situacao: null, pend: "", busca: prot }); refletirFiltros(); atualizar(); rolarLista(); });
+      else { b.disabled = true; b.title = "Este processo não está mais na lista"; }
+      const li = el("li"); li.append(b);
+      return li;
+    }));
+    campo("hist-mais").hidden = H.length <= histMostrar;
+  }
+  campo("hist-mais").addEventListener("click", () => { histMostrar += 30; historico(); });
+
+  // ---------------------------------------------------------------- avisos
+  function avisos() {
+    const caixa = campo("avisos");
+    caixa.replaceChildren();
+    const aviso = (tipo, texto) => { const a = el("div", { class: "aviso " + tipo, role: "note" }); a.append(svgIcone(AVISO[tipo].icone, AVISO[tipo].cor, 18), el("p", null, texto)); caixa.append(a); };
+    if (voltaram.length)
+      aviso("erro", `${plural(voltaram.length, "alteração que você salvou não chegou", "alterações que você salvou não chegaram")} ao sistema: o arquivo não estava na pasta ENTRADA quando a lista foi atualizada. ` +
+                    (voltaram.length === 1 ? "Ela voltou para “não salva”." : "Elas voltaram para “não salvas”.") + " Clique em Salvar alterações e salve o arquivo na pasta ENTRADA.");
+    if (ENVIADOS.size)
+      aviso("info", `Você já salvou ${plural(ENVIADOS.size, "alteração, que entra", "alterações, que entram")} no sistema na próxima atualização (todo dia às 8h, ou em “Atualizar agora”). ` +
+                    "Até lá, elas aparecem marcadas como “salvo” só neste computador.");
+    const idade = diasEntre(D.gerado_iso.slice(0, 10), HOJE);
+    if (idade >= 2) aviso("atencao", `Esta lista é de ${dataBr(D.gerado_iso)}: a atualização diária não rodou desde então. Avise quem cuida do sistema.`);
+    if (!guardando) aviso("atencao", "Este navegador não está guardando o que você preenche: salve as alterações antes de fechar a página.");
+    caixa.hidden = !caixa.children.length;
+  }
+
+  // ---------------------------------------------------------------- salvar (arquivo para a pasta ENTRADA)
+  function barra() {
+    const rs = Object.values(E.rascunho), n = rs.length, procs = new Set(rs.map((r) => r.p)).size;
+    campo("pendentes").textContent = n ? `${plural(n, "alteração", "alterações")} em ${plural(procs, "processo", "processos")} ainda não ${n === 1 ? "salva" : "salvas"}` : "";
+    campo("pendentes").hidden = !n;
+    const msg = campo("mensagem").textContent;
+    campo("salvar").hidden = campo("descartar").hidden = !n;
+    campo("fechar-msg").hidden = !msg || !!n;
+    campo("barra").hidden = !n && !msg;
+    document.body.classList.toggle("com-barra", !campo("barra").hidden);
+  }
+  function mensagem(texto, erro) { const m = campo("mensagem"); m.textContent = texto; m.classList.toggle("erro", !!erro); barra(); }
+  campo("fechar-msg").addEventListener("click", () => mensagem(""));
+  campo("descartar").addEventListener("click", () => {
+    const n = Object.keys(E.rascunho).length;
+    if (!n || !window.confirm(`Descartar ${plural(n, "alteração não salva", "alterações não salvas")}?`)) return;
+    E.rascunho = {}; guardar(); mensagem(""); resumo(); desenharLista(); barra();
+  });
+
+  // A última pasta escolhida fica lembrada: na próxima vez a janela de salvar já abre nela.
+  let ultimaPasta = null;
+  function banco() {
+    return new Promise((ok, falha) => {
+      const r = indexedDB.open("grupo-support-acompanhamento", 1);
+      r.onupgradeneeded = () => r.result.createObjectStore("pastas");
+      r.onsuccess = () => ok(r.result); r.onerror = () => falha(r.error);
+    });
+  }
+  (async () => { try { const db = await banco(); const q = db.transaction("pastas").objectStore("pastas").get("ultima"); q.onsuccess = () => { ultimaPasta = q.result || null; }; } catch (_) { /* sem memória da pasta */ } })();
+  async function lembrarPasta(alca) { ultimaPasta = alca; try { (await banco()).transaction("pastas", "readwrite").objectStore("pastas").put(alca, "ultima"); } catch (_) { /* tudo bem */ } }
+
+  async function gravarArquivo(nome, texto) {
+    if (window.showSaveFilePicker) {
+      const opcoes = { suggestedName: nome, types: [{ description: "Alterações do acompanhamento", accept: { "application/json": [".json"] } }] };
+      if (ultimaPasta) opcoes.startIn = ultimaPasta;
+      let alca = null;
+      try { alca = await window.showSaveFilePicker(opcoes); }
+      catch (e) {
+        if (e.name === "AbortError") throw e;
+        if (opcoes.startIn) { delete opcoes.startIn; try { alca = await window.showSaveFilePicker(opcoes); } catch (e2) { if (e2.name === "AbortError") throw e2; } }
+      }
+      if (alca) {
+        const w = await alca.createWritable(); await w.write(texto); await w.close();
+        lembrarPasta(alca);
+        return { nome: alca.name, escolheu: true };
+      }
+    }
+    const a = el("a", { href: URL.createObjectURL(new Blob([texto], { type: "application/json" })), download: nome });
+    document.body.append(a); a.click(); a.remove();
+    return { nome, escolheu: false };
+  }
+  const idNovo = () => (window.crypto && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 12));
+  let salvando = false;
+  async function salvar() {
+    const rs = Object.values(E.rascunho);
+    if (!rs.length || salvando) return;
+    const quem = campo("quem");
+    const nome = quem.value.trim();
+    if (!nome) {
+      quem.classList.add("falta"); quem.focus(); quem.scrollIntoView({ behavior: "smooth", block: "center" });
+      mensagem("Escreva seu nome em “Quem está preenchendo” e clique em Salvar alterações de novo.", true);
+      return;
+    }
+    const salvoEm = agora(), id = idNovo();
+    const conteudo = { tipo: D.tipo, versao: 1, id, quem: nome, salvo_em: salvoEm, pagina_gerada: D.gerado_iso,
+                       alteracoes: rs.map((r) => ({ protocolo: r.p, lista: r.l, campo: r.c, valor: norm(r.v), anterior: r.a, em: r.em })) };
+    const arquivo = `${D.prefixo} - ${nome.replace(/[\\/:*?"<>|]+/g, " ").replace(/\s+/g, " ").slice(0, 40).trim()} - ${salvoEm.slice(0, 10)} ${salvoEm.slice(11, 16).replace(":", "h")}.json`;
+    salvando = true;
+    let onde;
+    try { onde = await gravarArquivo(arquivo, JSON.stringify(conteudo, null, 1)); }
+    catch (e) {
+      salvando = false;
+      if (e && e.name === "AbortError") return;   // fechou a janela sem salvar: nada muda
+      mensagem("Não consegui salvar o arquivo (" + (e && e.message ? e.message : e) + "). Tente de novo.", true);
+      return;
+    }
+    salvando = false;
+    E.enviados.push({ id, salvo_em: salvoEm, arquivo: onde.nome, alteracoes: rs });
+    E.rascunho = {};
+    guardar(); mapearEnviados(); resumo(); desenharLista(); avisos();
+    mensagem(onde.escolheu
+      ? `Arquivo “${onde.nome}” salvo. Ele precisa estar na pasta ENTRADA do sistema: na próxima atualização (8h, ou “Atualizar agora”) as alterações entram e aparecem para todos.`
+      : `O arquivo “${onde.nome}” foi para a pasta Downloads. No computador que roda o sistema ele é lido de lá; em outro computador, mova o arquivo para a pasta ENTRADA do sistema.`);
+  }
+  campo("salvar").addEventListener("click", salvar);
+  document.addEventListener("keydown", (e) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); salvar(); } });
+  window.addEventListener("beforeunload", (e) => { if (Object.keys(E.rascunho).length) { e.preventDefault(); e.returnValue = ""; } });
+
+  // ---------------------------------------------------------------- tudo se redesenha sobre o mesmo recorte
+  function resumo() { const rec = recorte(true); indicadores(rec); situacoes(rec); analistas(recorte(false)); }
+  function atualizar() { resumo(); lista.pagina = 0; desenharLista(); }
+
+  campo("gerado").textContent = D.gerado;
+  campo("fonte").textContent = `${plural(PROCS.length, "processo", "processos")} · atualizado em ${D.gerado}`;
+  const logo = campo("logo");
+  const textoLogo = () => { const t = el("div", { class: "texto" }); t.append(el("small", null, "GRUPO"), document.createTextNode("SUPPORT")); logo.replaceChildren(t); };
+  if (D.logo) { const img = el("img", { src: D.logo, alt: "Grupo Support" }); img.addEventListener("error", textoLogo); logo.append(img); } else textoLogo();
+  const quem = campo("quem");
+  campo("pessoas").replaceChildren(...(D.pessoas || []).map((n) => el("option", { value: n })));
+  quem.value = E.nome;
+  quem.addEventListener("input", () => { E.nome = quem.value.trim(); quem.classList.remove("falta"); guardar(); });
+  refletirFiltros();
+  atualizar();
+  historico();
+  avisos();
+  barra();
+})();
+</script>
+</body>
+</html>

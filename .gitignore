@@ -1,0 +1,44 @@
+# ============================================================================
+# Credenciais, sessoes e dados de associados NUNCA vao para o repositorio.
+# ============================================================================
+
+# --- Dados e saidas do sistema ---
+ENTRADA/
+RESULTADOS/
+LOGS_SIGA_V3/
+sistema/configuracao.env
+sistema/*.json
+sistema/dados/
+sistema/logs/
+sistema/backups/
+
+# --- Python que acompanha a pasta (runtime embutido, pesado) ---
+sistema/python/
+
+# --- Automacao do SIGA: perfil do navegador (sessao/cookies), credenciais e logs ---
+siga_automacao-v2/siga_automacao/perfil_navegador/
+siga_automacao-v2/siga_automacao/logs/
+siga_automacao-v2/siga_automacao/entrada/
+siga_automacao-v2/siga_automacao/preferencias_tela.json
+credenciais_siga_protegidas.dat
+*.dat
+
+# --- Pastas de saida temporaria da exportacao (tempfile mkdtemp prefix "siga_") ---
+siga_8tqz_kp5/
+SAIDA_SIGA_V3_TESTE/
+
+# --- Bloqueios de execucao ---
+.siga_v3_atualizacao.lock
+*.lock
+
+# --- Site (Vercel): dependencias e variaveis locais ---
+painel-web/node_modules/
+painel-web/.vercel
+painel-web/.env
+painel-web/.env*.local
+
+# --- Python / sistema operacional ---
+__pycache__/
+*.py[cod]
+Thumbs.db
+desktop.ini

@@ -1,0 +1,606 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conferência de finalizados · Grupo Support</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Identidade do Grupo Support: verde #a9c927, cinza #4d4d4d, texto #373435, Poppins, etiquetas em pílula. */
+  :root {
+    color-scheme: light;
+    --verde: #a9c927;        /* cor da marca: títulos, etiquetas, destaques */
+    --verde-100: #e1f9a0;    /* rampa de um matiz só (claro -> escuro) para a matriz */
+    --verde-300: #bfda69;
+    --verde-500: #8daa01;
+    --verde-600: #748c05;    /* barras: mesmo verde, um passo mais escuro (3,8:1 no branco) */
+    --verde-700: #5c7007;
+    --verde-900: #303b0a;
+    --cinza: #4d4d4d;
+    --tinta: #373435;
+    --tinta-2: #666364;
+    --mudo: #8c898a;
+    --linha: #e7e7e4;
+    --eixo: #c9c8c4;
+    --plano: #f6f6f3;
+    --superficie: #ffffff;
+    --bom: #0ca30c; --aviso: #fab219; --serio: #ec835a; --critico: #d03b3b;   /* estados: sempre com ícone + rótulo */
+    --fonte: "Poppins", "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--plano); color: var(--tinta); font: 400 14px/1.5 var(--fonte); }
+  .largura { max-width: 1320px; margin: 0 auto; padding: 0 24px; }
+
+  .topo { background: var(--cinza); color: #fff; font-size: 12.5px; }
+  .topo .largura { display: flex; gap: 16px; justify-content: space-between; flex-wrap: wrap; padding-top: 9px; padding-bottom: 9px; }
+  .topo strong { font-weight: 600; }
+  header.marca { background: var(--superficie); box-shadow: 0 1px 0 var(--linha); }
+  header.marca .largura { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-top: 14px; padding-bottom: 14px; }
+  .logo img { height: 52px; display: block; }
+  .logo .texto { font-weight: 700; font-size: 26px; letter-spacing: .5px; color: var(--cinza); line-height: 1; }
+  .logo .texto small { display: block; font-weight: 500; font-size: 11px; letter-spacing: 7px; color: var(--cinza); }
+  .menu { font-size: 12.5px; letter-spacing: 1px; text-transform: uppercase; color: var(--tinta-2); display: flex; gap: 28px; flex-wrap: wrap; }
+  .menu a { color: inherit; text-decoration: none; padding: 6px 0; border-bottom: 2px solid transparent; }
+  .menu a:hover, .menu a:focus-visible { color: var(--tinta); border-bottom-color: var(--verde); outline: none; }
+
+  .etiqueta { display: inline-block; background: var(--verde); color: #fff; font-size: 12px; font-weight: 500; letter-spacing: 1px;
+              text-transform: uppercase; padding: 4px 18px; border-radius: 50px 50px 50px 0; }
+  .abertura { background: var(--superficie); padding: 34px 0 30px; }
+  .abertura h1 { margin: 12px 0 8px; font-size: clamp(28px, 4vw, 40px); line-height: 1.15; font-weight: 700; color: var(--verde); }
+  .abertura p { margin: 0; max-width: 780px; color: var(--tinta-2); }
+
+  .filtros { background: var(--superficie); border-top: 1px solid var(--linha); border-bottom: 1px solid var(--linha); }
+  @media (min-width: 1100px) and (min-height: 700px) { .filtros { position: sticky; top: 0; z-index: 5; } }   /* só fixa onde cabe sem tomar a tela */
+  .filtros .largura { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: flex-end; padding-top: 12px; padding-bottom: 12px; }
+  .campo { display: flex; flex-direction: column; gap: 3px; font-size: 11px; letter-spacing: .6px; text-transform: uppercase; color: var(--mudo); }
+  .campo select, .campo input { font: 400 13px var(--fonte); color: var(--tinta); background: #fff; border: 1px solid var(--eixo); border-radius: 18px;
+                                padding: 6px 12px; min-width: 120px; height: 34px; }
+  .campo input { min-width: 220px; }
+  .campo select:focus, .campo input:focus { outline: 2px solid var(--verde); outline-offset: 1px; border-color: var(--verde-600); }
+  .botao { font: 500 12px var(--fonte); letter-spacing: 1px; text-transform: uppercase; color: #fff; background: var(--cinza); border: 0; cursor: pointer;
+           padding: 9px 20px; border-radius: 50px 50px 0 50px; height: 34px; }
+  .botao:hover, .botao:focus-visible { background: var(--tinta); outline: 2px solid var(--verde); outline-offset: 1px; }
+  .botao.claro { background: #fff; color: var(--tinta); border: 1px solid var(--eixo); }
+  .botao.claro:hover, .botao.claro:focus-visible { background: var(--plano); }
+
+  main { padding: 26px 0 40px; }
+  .indicadores { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-bottom: 18px; }
+  .indicador { background: var(--superficie); border-radius: 14px; padding: 16px 18px 14px; border-top: 3px solid var(--verde); }
+  .indicador .rotulo { font-size: 12.5px; color: var(--tinta-2); }
+  .indicador .valor { font-size: 32px; font-weight: 600; line-height: 1.2; color: var(--tinta); margin-top: 2px; }
+  .indicador .nota { font-size: 12px; color: var(--mudo); margin-top: 2px; min-height: 18px; }
+
+  .grade { display: grid; grid-template-columns: repeat(12, 1fr); gap: 18px; }
+  .cartao { background: var(--superficie); border-radius: 14px; padding: 18px 20px 20px; grid-column: span 12; min-width: 0; }
+  @media (min-width: 1000px) { .cartao.metade { grid-column: span 6; } .cartao.sete { grid-column: span 7; } .cartao.cinco { grid-column: span 5; } }
+  .cartao h2 { margin: 0; font-size: 17px; font-weight: 600; color: var(--tinta); }
+  .cartao .sub { margin: 2px 0 14px; font-size: 12.5px; color: var(--tinta-2); }
+  .cabeca { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+  .link { font: 500 12px var(--fonte); color: var(--tinta-2); background: none; border: 0; border-bottom: 1px solid var(--eixo); cursor: pointer; padding: 0 0 1px; white-space: nowrap; }
+  .link:hover, .link:focus-visible { color: var(--tinta); border-bottom-color: var(--verde-600); outline: none; }
+
+  svg.grafico { display: block; width: 100%; height: auto; overflow: visible; }
+  svg.grafico text { font-family: var(--fonte); font-size: 11px; fill: var(--mudo); }
+  svg.grafico text.valor { fill: var(--tinta); font-weight: 500; }
+  svg.grafico .grade-y { stroke: var(--linha); stroke-width: 1; }
+  svg.grafico .base { stroke: var(--eixo); stroke-width: 1; }
+  svg.grafico .coluna { fill: var(--verde-600); cursor: default; }
+  svg.grafico .alvo { fill: transparent; }
+  svg.grafico g.mes:hover .coluna, svg.grafico g.mes:focus .coluna { fill: var(--verde-500); }
+  svg.grafico g.mes:focus { outline: none; }
+  svg.grafico g.mes:focus .alvo { stroke: var(--verde-600); stroke-width: 1; }
+
+  .barras { display: grid; grid-template-columns: minmax(120px, 44%) 1fr auto; gap: 9px 12px; align-items: center; }
+  .barras .nome { font-size: 12.5px; color: var(--tinta); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 8px; }
+  .barras.longas { grid-template-columns: minmax(150px, 58%) 1fr auto; }   /* nomes compridos: quebram a linha em vez de cortar */
+  .barras.longas .nome { white-space: normal; line-height: 1.3; font-size: 12px; }
+  .barras .trilho { height: 16px; display: flex; align-items: center; }
+  .barras .barra { height: 14px; min-width: 2px; background: var(--verde-600); border-radius: 0 4px 4px 0; }
+  .barras .numero { font-size: 12.5px; font-weight: 500; color: var(--tinta); font-variant-numeric: tabular-nums; text-align: right; }
+  .barras .linha { display: contents; }
+  .barras .linha[role=button] { cursor: pointer; }
+  .barras .linha:hover .barra, .barras .linha:focus .barra { background: var(--verde-500); }
+  .barras .linha:focus { outline: none; }
+  .barras .linha:focus .nome { text-decoration: underline; text-decoration-color: var(--verde-600); text-underline-offset: 3px; }
+  .vazio { color: var(--mudo); font-size: 13px; padding: 18px 0; }
+
+  .rolagem { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; }
+  table.matriz { font-size: 12px; font-variant-numeric: tabular-nums; border-collapse: separate; border-spacing: 2px; }
+  table.matriz th { font-weight: 500; color: var(--tinta-2); text-align: right; padding: 4px 8px; white-space: nowrap; }
+  table.matriz thead th { text-align: center; vertical-align: bottom; font-size: 11px; max-width: 86px; white-space: normal; line-height: 1.2; }
+  table.matriz .canto { text-align: left; font-size: 11px; color: var(--mudo); font-weight: 400; }
+  table.matriz td { text-align: center; padding: 7px 6px; min-width: 52px; border-radius: 4px; color: var(--tinta); }
+  table.matriz td.celula { cursor: pointer; }
+  table.matriz td.n0 { color: var(--eixo); cursor: default; }
+  table.matriz td.n1 { background: var(--verde-100); }
+  table.matriz td.n2 { background: var(--verde-300); }
+  table.matriz td.n3 { background: var(--verde-500); }
+  table.matriz td.n4 { background: var(--verde-700); color: #fff; }
+  table.matriz td.n5 { background: var(--verde-900); color: #fff; }
+  table.matriz td.igual { box-shadow: inset 0 0 0 2px var(--tinta); }
+  table.matriz td.celula:hover, table.matriz td.celula:focus { outline: 2px solid var(--cinza); outline-offset: 1px; }
+  table.matriz td.total, table.matriz th.total { color: var(--tinta); font-weight: 600; background: none; }
+  .legenda { display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: center; margin-top: 12px; font-size: 12px; color: var(--tinta-2); }
+  .legenda .escala { display: inline-flex; gap: 2px; vertical-align: middle; margin: 0 6px; }
+  .legenda .escala i { width: 18px; height: 10px; border-radius: 2px; display: inline-block; }
+  .legenda .anel { display: inline-block; width: 16px; height: 12px; border-radius: 3px; box-shadow: inset 0 0 0 2px var(--tinta); vertical-align: middle; margin-right: 6px; }
+
+  table.lista { font-size: 12.5px; }
+  table.lista th { position: sticky; top: 0; background: var(--superficie); text-align: left; font-weight: 600; font-size: 11px; letter-spacing: .5px; text-transform: uppercase;
+                   color: var(--tinta-2); padding: 9px 10px; border-bottom: 2px solid var(--verde); white-space: nowrap; cursor: pointer; user-select: none; }
+  table.lista th:hover, table.lista th:focus-visible { color: var(--tinta); outline: none; }
+  table.lista th .seta { color: var(--verde-600); margin-left: 4px; }
+  table.lista td { padding: 8px 10px; border-bottom: 1px solid var(--linha); vertical-align: top; }
+  table.lista td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.lista td.fixo { white-space: nowrap; }
+  table.lista td:nth-child(3) { min-width: 220px; }    /* Nome */
+  table.lista td:nth-child(9) { min-width: 170px; }    /* Oficina */
+  table.lista td:nth-child(13) { min-width: 260px; }   /* Classificação negativa */
+  table.lista tbody tr:hover { background: #fafbf5; }
+  .difere { font-weight: 600; }
+  .difere::before { content: "≠ "; color: var(--tinta-2); font-weight: 400; }
+  .selo { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; font-size: 12px; color: var(--tinta); }
+  .selo svg, .nome svg { flex: none; }
+  .rodape-lista { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 14px; font-size: 12.5px; color: var(--tinta-2); }
+  .paginas { display: flex; gap: 8px; align-items: center; }
+  .paginas button[disabled] { opacity: .4; cursor: default; }
+
+  table.dados { font-size: 12.5px; margin-top: 10px; font-variant-numeric: tabular-nums; }
+  table.dados th, table.dados td { padding: 5px 10px; border-bottom: 1px solid var(--linha); text-align: right; }
+  table.dados th:first-child, table.dados td:first-child { text-align: left; }
+  table.dados th { font-weight: 600; color: var(--tinta-2); }
+
+  #dica { position: fixed; z-index: 20; pointer-events: none; background: var(--tinta); color: #fff; border-radius: 8px; padding: 8px 12px; font-size: 12px; line-height: 1.45;
+          max-width: 300px; box-shadow: 0 6px 20px rgba(0,0,0,.18); opacity: 0; transition: opacity .08s; }
+  #dica.visivel { opacity: 1; }
+  #dica b { display: block; font-size: 15px; font-weight: 600; }
+  #dica span { display: block; color: #dedcdc; }
+
+  footer { background: var(--cinza); color: #e9e8e8; font-size: 12.5px; padding: 22px 0; }
+  footer .largura { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  footer b { color: #fff; font-weight: 600; }
+  @media (max-width: 640px) { .largura { padding: 0 16px; } .menu { display: none; } .barras { grid-template-columns: minmax(96px, 40%) 1fr auto; }
+                              .barras.longas { grid-template-columns: minmax(120px, 56%) 1fr auto; } }
+  @media print { .filtros, .paginas, .botao, .link { display: none !important; } body { background: #fff; } .cartao { break-inside: avoid; } }
+</style>
+</head>
+<body>
+<div class="topo"><div class="largura">
+  <span>Rotina do sinistro · <strong>Conferência de finalizados</strong></span>
+  <span>Atualizado em <strong id="gerado"></strong></span>
+</div></div>
+<header class="marca"><div class="largura">
+  <div class="logo" id="logo"></div>
+  <nav class="menu" aria-label="Seções">
+    <a href="#resumo">Resumo</a><a href="#pendencias">Conferência</a><a href="#matriz">SIGA × SGA</a><a href="#negativas">Negativas</a><a href="#lista">Lista</a>
+  </nav>
+</div></header>
+
+<section class="abertura"><div class="largura">
+  <span class="etiqueta">Sinistro</span>
+  <h1>Conferência de finalizados</h1>
+  <p id="descricao"></p>
+</div></section>
+
+<section class="filtros" aria-label="Filtros"><div class="largura">
+  <label class="campo">De <select id="f-de"></select></label>
+  <label class="campo">Até <select id="f-ate"></select></label>
+  <label class="campo">Origem <select id="f-origem"></select></label>
+  <label class="campo">Cobertura <select id="f-cob"></select></label>
+  <label class="campo">Status SIGA <select id="f-siga"></select></label>
+  <label class="campo">Status SGA <select id="f-sga"></select></label>
+  <label class="campo">Conferência <select id="f-pend"></select></label>
+  <label class="campo" title="Último setor em que o processo apareceu na aba SIGA (pela tarefa)">Setor <select id="f-setor"></select></label>
+  <label class="campo">Buscar <input id="f-busca" type="search" placeholder="nome, placa, número ou protocolo"></label>
+  <button class="botao claro" id="limpar" type="button">Limpar filtros</button>
+</div></section>
+
+<main><div class="largura">
+  <div class="indicadores" id="resumo"></div>
+  <div class="grade">
+    <section class="cartao sete">
+      <div class="cabeca"><div><h2>Liberações por mês</h2><p class="sub">Eventos do SIGA pela data de liberação.</p></div>
+        <button class="link" id="ver-tabela" type="button" aria-expanded="false">Ver tabela</button></div>
+      <div id="mensal"></div>
+      <div id="mensal-tabela" hidden></div>
+    </section>
+    <section class="cartao cinco" id="pendencias">
+      <h2>O que conferir</h2>
+      <p class="sub">As três anotações da conferência, calculadas para cada evento. Clique para filtrar.</p>
+      <div id="graf-pend"></div>
+      <h2 style="margin-top:22px">Diferenças entre os sistemas</h2>
+      <p class="sub">Eventos com status diferente no SIGA e no SGA, ou sem correspondência no SGA.</p>
+      <div id="graf-dif"></div>
+    </section>
+    <section class="cartao sete" id="matriz">
+      <h2>Status no SIGA × status no SGA</h2>
+      <p class="sub">Quantos eventos estão em cada combinação. Clique em uma célula para ver os eventos.</p>
+      <div class="rolagem" id="graf-matriz"></div>
+      <div class="legenda">
+        <span>Menos<span class="escala"><i style="background:var(--verde-100)"></i><i style="background:var(--verde-300)"></i><i style="background:var(--verde-500)"></i><i style="background:var(--verde-700)"></i><i style="background:var(--verde-900)"></i></span>mais eventos</span>
+        <span><span class="anel"></span>mesmo status nos dois sistemas</span>
+        <span>(vazio) no SGA = sem correspondência</span>
+      </div>
+    </section>
+    <section class="cartao cinco" id="negativas">
+      <h2>Motivos de negativa</h2>
+      <p class="sub">Classificação dos eventos negados no SIGA ou no SGA.</p>
+      <div id="graf-motivos"></div>
+    </section>
+    <section class="cartao" id="lista">
+      <div class="cabeca"><div><h2>Eventos</h2><p class="sub" id="lista-sub"></p></div>
+        <button class="botao" id="exportar" type="button">Exportar CSV</button></div>
+      <div class="rolagem"><table class="lista"><thead><tr id="lista-cab"></tr></thead><tbody id="lista-corpo"></tbody></table></div>
+      <div class="rodape-lista"><span id="lista-info"></span>
+        <span class="paginas"><button class="botao claro" id="pag-ant" type="button">Anterior</button><span id="pag-num"></span><button class="botao claro" id="pag-prox" type="button">Próxima</button></span></div>
+    </section>
+  </div>
+</div></main>
+
+<footer><div class="largura">
+  <span><b>Grupo Support</b> · uso interno · contém dados de associados</span>
+  <span id="fonte"></span>
+</div></footer>
+<div id="dica" role="status" aria-live="polite"></div>
+
+<script id="dados" type="application/json">__DADOS__</script>
+<script>
+(() => {
+  "use strict";
+  const D = JSON.parse(document.getElementById("dados").textContent);
+  const LINHAS = D.linhas;
+  const C = { num: 0, origem: 1, siga: 2, nome: 3, cob: 4, placa: 5, abertura: 6, lib: 7, dur: 8, oficina: 9, prot: 10, sga: 11, classif: 12, uf: 13, coop: 14, pend: 15, setor: 16 };
+  const PEND = {
+    arquivado: { rotulo: "Verificar arquivamento", cor: "var(--aviso)", icone: "M10.5 3a7.5 7.5 0 1 0 4.6 13.4l4.2 4.3 1.5-1.5-4.3-4.2A7.5 7.5 0 0 0 10.5 3Zm0 2.2a5.3 5.3 0 1 1 0 10.6 5.3 5.3 0 0 1 0-10.6Z" },
+    excluir: { rotulo: "Por que excluir?", cor: "var(--serio)", icone: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 15.6a1.3 1.3 0 1 1 0 2.6 1.3 1.3 0 0 1 0-2.6ZM12 5.6c2.3 0 4 1.5 4 3.6 0 1.6-.9 2.5-1.9 3.2-.8.6-1.1 1-1.1 1.9v.5h-2.1v-.7c0-1.6.7-2.4 1.7-3.1.8-.6 1.2-1 1.2-1.7 0-.9-.7-1.5-1.8-1.5s-1.9.6-2 1.7H7.9c.1-2.4 1.8-3.9 4.1-3.9Z" },
+    motivo: { rotulo: "Incluir motivo", cor: "var(--critico)", icone: "M12 2 1.5 20.5h21L12 2Zm-1.1 6.6h2.2v6h-2.2v-6Zm1.1 7.4a1.3 1.3 0 1 1 0 2.6 1.3 1.3 0 0 1 0-2.6Z" },
+  };
+  const MESES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+  const nf = new Intl.NumberFormat("pt-BR");
+  const pct = (a, b) => (b ? (100 * a / b).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + "%" : "–");
+  const dataBr = (iso) => (iso ? iso.slice(8, 10) + "/" + iso.slice(5, 7) + "/" + iso.slice(0, 4) : "");
+  const mesRotulo = (ym) => MESES[+ym.slice(5, 7) - 1] + "/" + ym.slice(2, 4);
+  const semAcento = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase();
+  const vazio = (s) => s || "(vazio)";
+  const negado = (l) => l[C.siga] === "NEGADO" || l[C.sga] === "NEGADO";
+  const divergente = (l) => l[C.sga] !== "" && l[C.siga] !== l[C.sga];
+
+  function el(tag, atributos, texto) {
+    const e = document.createElement(tag);
+    for (const k in atributos || {}) { if (k === "class") e.className = atributos[k]; else e.setAttribute(k, atributos[k]); }
+    if (texto !== undefined && texto !== null) e.textContent = texto;   // rótulos vêm dos dados: sempre como texto
+    return e;
+  }
+  function svg(tag, atributos, texto) {
+    const e = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    for (const k in atributos || {}) e.setAttribute(k, atributos[k]);
+    if (texto !== undefined) e.textContent = texto;
+    return e;
+  }
+  function icone(chave, tamanho) {
+    const s = svg("svg", { viewBox: "0 0 24 24", width: tamanho || 14, height: tamanho || 14, "aria-hidden": "true" });
+    s.appendChild(svg("path", { d: PEND[chave].icone, fill: PEND[chave].cor }));
+    return s;
+  }
+
+  // ---------------------------------------------------------------- dica (hover e foco mostram o mesmo)
+  const dica = document.getElementById("dica");
+  function mostrarDica(alvo, valor, linhas, evento) {
+    dica.replaceChildren(el("b", null, valor), ...linhas.map((t) => el("span", null, t)));
+    const r = alvo.getBoundingClientRect();
+    const x = evento && evento.clientX ? evento.clientX : r.left + r.width / 2;
+    const y = evento && evento.clientY ? evento.clientY : r.top;
+    dica.classList.add("visivel");
+    const d = dica.getBoundingClientRect();
+    dica.style.left = Math.max(8, Math.min(window.innerWidth - d.width - 8, x + 14)) + "px";
+    dica.style.top = Math.max(8, y - d.height - 12) + "px";
+  }
+  const esconderDica = () => dica.classList.remove("visivel");
+  function comDica(alvo, conteudo) {
+    alvo.addEventListener("pointermove", (e) => { const [v, l] = conteudo(); mostrarDica(alvo, v, l, e); });
+    alvo.addEventListener("pointerleave", esconderDica);
+    alvo.addEventListener("focus", () => { const [v, l] = conteudo(); mostrarDica(alvo, v, l); });
+    alvo.addEventListener("blur", esconderDica);
+  }
+  function aoAtivar(alvo, acao) {
+    alvo.addEventListener("click", acao);
+    alvo.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); acao(); } });
+  }
+
+  // ---------------------------------------------------------------- filtros (uma linha, valem para tudo abaixo)
+  const meses = [...new Set(LINHAS.map((l) => l[C.lib].slice(0, 7)))].sort();
+  const F = { de: meses[0] || "", ate: meses[meses.length - 1] || "", origem: "", cob: "", siga: null, sga: null, pend: "", setor: "", busca: "" };
+  const SEM_SETOR = "-";
+  const setoresDe = (l) => (l[C.setor] ? l[C.setor].split(", ") : []);
+  const campo = (id) => document.getElementById(id);
+  function opcoes(select, pares) { select.replaceChildren(...pares.map(([v, t]) => { const o = el("option", { value: v }, t); return o; })); }
+  function distintos(coluna) {
+    const n = new Map();
+    for (const l of LINHAS) n.set(l[coluna], (n.get(l[coluna]) || 0) + 1);
+    return [...n.entries()].sort((a, b) => b[1] - a[1]).map(([v]) => v);
+  }
+  opcoes(campo("f-de"), meses.map((m) => [m, mesRotulo(m)]));
+  opcoes(campo("f-ate"), meses.map((m) => [m, mesRotulo(m)]));
+  opcoes(campo("f-origem"), [["", "Todas"], ...distintos(C.origem).filter(Boolean).map((v) => [v, v])]);
+  opcoes(campo("f-cob"), [["", "Todas"], ...distintos(C.cob).filter(Boolean).map((v) => [v, v])]);
+  opcoes(campo("f-siga"), [["*", "Todos"], ...distintos(C.siga).map((v) => [v, vazio(v)])]);
+  opcoes(campo("f-sga"), [["*", "Todos"], ...distintos(C.sga).map((v) => [v, vazio(v)])]);
+  opcoes(campo("f-pend"), [["", "Todos os eventos"], ["qualquer", "Com anotação de conferência"], ["arquivado", PEND.arquivado.rotulo], ["excluir", PEND.excluir.rotulo],
+    ["motivo", PEND.motivo.rotulo], ["divergente", "Status diferente SIGA × SGA"], ["semsga", "Sem correspondência no SGA"]]);
+  const contSetor = new Map();
+  for (const l of LINHAS) for (const s of setoresDe(l)) contSetor.set(s, (contSetor.get(s) || 0) + 1);
+  opcoes(campo("f-setor"), [["", "Todos"], ...[...contSetor.entries()].sort((a, b) => b[1] - a[1]).map(([s]) => [s, s]), [SEM_SETOR, "(sem setor registrado)"]]);
+  function refletirFiltros() {
+    campo("f-de").value = F.de; campo("f-ate").value = F.ate; campo("f-origem").value = F.origem; campo("f-cob").value = F.cob;
+    campo("f-siga").value = F.siga === null ? "*" : F.siga; campo("f-sga").value = F.sga === null ? "*" : F.sga;
+    campo("f-pend").value = F.pend; campo("f-setor").value = F.setor; campo("f-busca").value = F.busca;
+  }
+  function lerFiltros() {
+    F.de = campo("f-de").value; F.ate = campo("f-ate").value;
+    if (F.de > F.ate) { F.ate = F.de; campo("f-ate").value = F.ate; }
+    F.origem = campo("f-origem").value; F.cob = campo("f-cob").value;
+    F.siga = campo("f-siga").value === "*" ? null : campo("f-siga").value;
+    F.sga = campo("f-sga").value === "*" ? null : campo("f-sga").value;
+    F.pend = campo("f-pend").value; F.setor = campo("f-setor").value; F.busca = campo("f-busca").value.trim();
+  }
+  for (const id of ["f-de", "f-ate", "f-origem", "f-cob", "f-siga", "f-sga", "f-pend", "f-setor"]) campo(id).addEventListener("change", () => { lerFiltros(); atualizar(); });
+  let espera = 0;
+  campo("f-busca").addEventListener("input", () => { clearTimeout(espera); espera = setTimeout(() => { lerFiltros(); atualizar(); }, 180); });
+  campo("limpar").addEventListener("click", () => {
+    Object.assign(F, { de: meses[0] || "", ate: meses[meses.length - 1] || "", origem: "", cob: "", siga: null, sga: null, pend: "", setor: "", busca: "" });
+    refletirFiltros(); atualizar();
+  });
+  function filtrar() {
+    const termo = semAcento(F.busca);
+    return LINHAS.filter((l) => {
+      const m = l[C.lib].slice(0, 7);
+      if (m < F.de || m > F.ate) return false;
+      if (F.origem && l[C.origem] !== F.origem) return false;
+      if (F.cob && l[C.cob] !== F.cob) return false;
+      if (F.siga !== null && l[C.siga] !== F.siga) return false;
+      if (F.sga !== null && l[C.sga] !== F.sga) return false;
+      if (F.pend === "qualquer" && !l[C.pend]) return false;
+      if (F.pend === "divergente" && !divergente(l)) return false;
+      if (F.pend === "semsga" && l[C.sga] !== "") return false;
+      if (PEND[F.pend] && l[C.pend] !== F.pend) return false;
+      if (F.setor === SEM_SETOR ? l[C.setor] : F.setor && !setoresDe(l).includes(F.setor)) return false;
+      if (termo && !semAcento(l[C.nome] + " " + l[C.placa] + " " + l[C.placa].replace("-", "") + " " + l[C.num] + " " + l[C.prot] + " " + l[C.oficina]).includes(termo)) return false;
+      return true;
+    });
+  }
+
+  // ---------------------------------------------------------------- indicadores
+  function indicadores(linhas) {
+    const total = linhas.length;
+    const pend = linhas.filter((l) => l[C.pend]).length;
+    const dif = linhas.filter(divergente).length;
+    const neg = linhas.filter(negado).length;
+    const dur = linhas.map((l) => l[C.dur]).filter((d) => typeof d === "number");
+    const media = dur.length ? dur.reduce((a, b) => a + b, 0) / dur.length : null;
+    const itens = [
+      ["Eventos finalizados", nf.format(total), mesRotulo(F.de) + " a " + mesRotulo(F.ate)],
+      ["Com anotação de conferência", nf.format(pend), pct(pend, total) + " dos eventos"],
+      ["Status diferente SIGA × SGA", nf.format(dif), pct(dif, total) + " dos eventos"],
+      ["Negados", nf.format(neg), pct(neg, total) + " dos eventos"],
+      ["Duração média", media === null ? "–" : media.toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + " dias", "da abertura à liberação"],
+    ];
+    campo("resumo").replaceChildren(...itens.map(([r, v, n]) => {
+      const t = el("div", { class: "indicador" });
+      t.append(el("div", { class: "rotulo" }, r), el("div", { class: "valor" }, v), el("div", { class: "nota" }, n));
+      return t;
+    }));
+  }
+
+  // ---------------------------------------------------------------- liberações por mês (colunas, uma série)
+  function passoLimpo(max, alvo) {
+    const bruto = max / alvo, p = Math.pow(10, Math.floor(Math.log10(bruto || 1)));
+    return [1, 2, 5, 10].map((k) => k * p).find((s) => s >= bruto) || p;
+  }
+  function mensal(linhas) {
+    const caixa = campo("mensal");
+    const cont = new Map(), pend = new Map();
+    for (const l of linhas) { const m = l[C.lib].slice(0, 7); cont.set(m, (cont.get(m) || 0) + 1); if (l[C.pend]) pend.set(m, (pend.get(m) || 0) + 1); }
+    const eixo = meses.filter((m) => m >= F.de && m <= F.ate);
+    const tabela = el("table", { class: "dados" });
+    const cab = el("tr"); cab.append(el("th", null, "Mês"), el("th", null, "Eventos"), el("th", null, "Com anotação"));
+    tabela.appendChild(el("thead")).append(cab);
+    const corpo = tabela.appendChild(el("tbody"));
+    for (const m of eixo) { const tr = el("tr"); tr.append(el("td", null, mesRotulo(m)), el("td", null, nf.format(cont.get(m) || 0)), el("td", null, nf.format(pend.get(m) || 0))); corpo.append(tr); }
+    campo("mensal-tabela").replaceChildren(tabela);
+    if (!linhas.length) { caixa.replaceChildren(el("div", { class: "vazio" }, "Nenhum evento com os filtros atuais.")); return; }
+
+    const W = Math.max(320, caixa.clientWidth || 640), H = 250, m = { t: 18, r: 8, b: 30, l: 44 };
+    const pw = W - m.l - m.r, ph = H - m.t - m.b;
+    const max = Math.max(...eixo.map((k) => cont.get(k) || 0), 1);
+    const passo = passoLimpo(max, 4), teto = Math.ceil(max / passo) * passo;
+    const y = (v) => m.t + ph - (v / teto) * ph;
+    const faixa = pw / eixo.length, larg = Math.max(3, Math.min(24, faixa - 2));
+    const g = svg("svg", { class: "grafico", viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Colunas com o número de eventos liberados em cada mês" });
+    for (let v = 0; v <= teto; v += passo) {
+      g.append(svg("line", { class: v ? "grade-y" : "base", x1: m.l, x2: W - m.r, y1: y(v), y2: y(v) }));
+      g.append(svg("text", { x: m.l - 8, y: y(v) + 4, "text-anchor": "end" }, nf.format(v)));
+    }
+    const cada = Math.ceil(eixo.length / Math.max(1, Math.floor(pw / 52)));
+    const maior = eixo.reduce((a, k) => ((cont.get(k) || 0) > (cont.get(a) || 0) ? k : a), eixo[0]);
+    eixo.forEach((k, i) => {
+      const v = cont.get(k) || 0, cx = m.l + faixa * i + faixa / 2, topo = y(v), alt = m.t + ph - topo, r = Math.min(4, alt, larg / 2);
+      const grupo = svg("g", { class: "mes", tabindex: "0", role: "img", "aria-label": `${mesRotulo(k)}: ${nf.format(v)} eventos` });
+      if (v > 0) grupo.append(svg("path", { class: "coluna", d: `M${cx - larg / 2},${m.t + ph} V${topo + r} Q${cx - larg / 2},${topo} ${cx - larg / 2 + r},${topo} H${cx + larg / 2 - r} Q${cx + larg / 2},${topo} ${cx + larg / 2},${topo + r} V${m.t + ph} Z` }));
+      grupo.append(svg("rect", { class: "alvo", x: m.l + faixa * i, y: m.t, width: faixa, height: ph }));   // alvo maior que a marca
+      comDica(grupo, () => [nf.format(v) + " eventos", [mesRotulo(k), nf.format(pend.get(k) || 0) + " com anotação de conferência"]]);
+      g.append(grupo);
+      if (i % cada === 0) g.append(svg("text", { x: cx, y: H - 10, "text-anchor": "middle" }, mesRotulo(k)));   // rótulos espaçados para não colidir
+      if ((k === maior || i === eixo.length - 1) && v > 0) g.append(svg("text", { class: "valor", x: cx, y: topo - 6, "text-anchor": "middle" }, nf.format(v)));   // só o pico e o último
+    });
+    caixa.replaceChildren(g);
+  }
+  campo("ver-tabela").addEventListener("click", (e) => {
+    const t = campo("mensal-tabela"); t.hidden = !t.hidden;
+    e.currentTarget.textContent = t.hidden ? "Ver tabela" : "Ocultar tabela"; e.currentTarget.setAttribute("aria-expanded", String(!t.hidden));
+  });
+
+  // ---------------------------------------------------------------- barras horizontais (um valor por categoria, mesma cor)
+  function barras(caixa, itens, total, aoClicar, longas) {
+    if (!itens.some((i) => i.valor > 0)) { caixa.replaceChildren(el("div", { class: "vazio" }, "Nada a mostrar com os filtros atuais.")); return; }
+    const max = Math.max(...itens.map((i) => i.valor), 1);
+    const lista = el("div", { class: longas ? "barras longas" : "barras" });
+    for (const item of itens) {
+      const linha = el("div", { class: "linha", tabindex: "0" });
+      const nome = el("div", { class: "nome", title: item.nome });
+      if (item.icone) nome.append(icone(item.icone));
+      nome.append(el("span", null, item.nome));
+      const trilho = el("div", { class: "trilho" });
+      const barra = el("div", { class: "barra" }); barra.style.width = (100 * item.valor / max) + "%";
+      if (!item.valor) barra.style.visibility = "hidden";
+      trilho.append(barra);
+      linha.append(nome, trilho, el("div", { class: "numero" }, nf.format(item.valor)));
+      comDica(linha, () => [nf.format(item.valor) + " eventos", [item.nome, pct(item.valor, total) + " dos eventos filtrados"]]);
+      if (aoClicar && item.chave) { linha.setAttribute("role", "button"); linha.setAttribute("aria-label", `${item.nome}: ${item.valor}. Filtrar a lista`); aoAtivar(linha, () => aoClicar(item.chave)); }
+      lista.append(linha);
+    }
+    caixa.replaceChildren(lista);
+  }
+  function pendencias(linhas) {
+    const n = { arquivado: 0, excluir: 0, motivo: 0 };
+    let dif = 0, sem = 0;
+    for (const l of linhas) { if (l[C.pend]) n[l[C.pend]]++; if (divergente(l)) dif++; if (l[C.sga] === "") sem++; }
+    const filtrarPor = (chave) => { F.pend = chave; refletirFiltros(); atualizar(); campo("lista").scrollIntoView({ behavior: "smooth", block: "start" }); };
+    barras(campo("graf-pend"), Object.keys(PEND).map((k) => ({ chave: k, nome: PEND[k].rotulo, valor: n[k], icone: k })), linhas.length, filtrarPor);
+    barras(campo("graf-dif"), [{ chave: "divergente", nome: "Status diferente", valor: dif }, { chave: "semsga", nome: "Sem correspondência no SGA", valor: sem }], linhas.length, filtrarPor);
+  }
+  function motivos(linhas) {
+    const n = new Map();
+    let total = 0;
+    for (const l of linhas) if (negado(l)) { const k = l[C.classif] || "(sem classificação)"; n.set(k, (n.get(k) || 0) + 1); total++; }
+    const ordenado = [...n.entries()].sort((a, b) => b[1] - a[1]);
+    const itens = ordenado.slice(0, 9).map(([nome, valor]) => ({ nome, valor }));
+    const resto = ordenado.slice(9).reduce((a, [, v]) => a + v, 0);
+    if (resto) itens.push({ nome: `Outros (${ordenado.length - 9} motivos)`, valor: resto });
+    barras(campo("graf-motivos"), itens, total, null, true);
+  }
+
+  // ---------------------------------------------------------------- matriz SIGA × SGA (intensidade em um matiz só)
+  function matriz(linhas) {
+    const caixa = campo("graf-matriz");
+    if (!linhas.length) { caixa.replaceChildren(el("div", { class: "vazio" }, "Nenhum evento com os filtros atuais.")); return; }
+    const n = new Map(), porSiga = new Map(), porSga = new Map(), geral = new Map();
+    for (const l of linhas) {
+      const a = l[C.siga], b = l[C.sga];
+      n.set(a + "\u0001" + b, (n.get(a + "\u0001" + b) || 0) + 1);
+      porSiga.set(a, (porSiga.get(a) || 0) + 1); porSga.set(b, (porSga.get(b) || 0) + 1);
+      geral.set(a, (geral.get(a) || 0) + 1); geral.set(b, (geral.get(b) || 0) + 1);
+    }
+    const ordem = [...geral.entries()].sort((a, b) => (a[0] === "") - (b[0] === "") || b[1] - a[1]).map(([s]) => s);   // mesma ordem nos dois eixos: a diagonal é "igual"
+    const linhasM = ordem.filter((s) => porSiga.has(s)), colunas = ordem.filter((s) => porSga.has(s));
+    const max = Math.max(...n.values());
+    const nivel = (v) => (v ? Math.max(1, Math.ceil(5 * Math.log(1 + v) / Math.log(1 + max))) : 0);
+    const t = el("table", { class: "matriz" });
+    t.append(el("caption", { style: "caption-side:top;text-align:left;font-size:11px;color:var(--mudo);padding:0 0 6px" }, "Linhas: status no SIGA · Colunas: status no SGA"));
+    const cab = el("tr"); cab.append(el("th", { class: "canto", scope: "col" }, "SIGA ↓ / SGA →"));
+    for (const c of colunas) cab.append(el("th", { scope: "col" }, vazio(c)));
+    cab.append(el("th", { class: "total", scope: "col" }, "Total"));
+    t.appendChild(el("thead")).append(cab);
+    const corpo = t.appendChild(el("tbody"));
+    for (const a of linhasM) {
+      const tr = el("tr"); tr.append(el("th", { scope: "row" }, vazio(a)));
+      for (const b of colunas) {
+        const v = n.get(a + "\u0001" + b) || 0;
+        const td = el("td", { class: "n" + nivel(v) + (v ? " celula" : "") + (v && a === b ? " igual" : "") }, v ? nf.format(v) : "·");
+        if (v) {
+          td.setAttribute("tabindex", "0"); td.setAttribute("role", "button");
+          td.setAttribute("aria-label", `SIGA ${vazio(a)}, SGA ${vazio(b)}: ${v} eventos. Filtrar a lista`);
+          comDica(td, () => [nf.format(v) + " eventos", ["SIGA: " + vazio(a), "SGA: " + vazio(b), pct(v, linhas.length) + " dos eventos filtrados"]]);
+          aoAtivar(td, () => { F.siga = a; F.sga = b; refletirFiltros(); atualizar(); campo("lista").scrollIntoView({ behavior: "smooth", block: "start" }); });
+        }
+        tr.append(td);
+      }
+      tr.append(el("td", { class: "total" }, nf.format(porSiga.get(a))));
+      corpo.append(tr);
+    }
+    const pe = el("tr"); pe.append(el("th", { class: "total", scope: "row" }, "Total"));
+    for (const b of colunas) pe.append(el("td", { class: "total" }, nf.format(porSga.get(b))));
+    pe.append(el("td", { class: "total" }, nf.format(linhas.length)));
+    corpo.append(pe);
+    caixa.replaceChildren(t);
+  }
+
+  // ---------------------------------------------------------------- lista
+  const COLUNAS = [["Número", C.num, "fixo"], ["Origem", C.origem, "fixo"], ["Nome", C.nome, ""], ["Cobertura", C.cob, "fixo"], ["Placa", C.placa, "fixo"],
+    ["Abertura", C.abertura, "fixo"], ["Liberação", C.lib, "fixo"], ["Dias", C.dur, "num"], ["Oficina", C.oficina, ""], ["Protocolo SGA", C.prot, "fixo"],
+    ["Status SIGA", C.siga, "fixo"], ["Status SGA", C.sga, "fixo"], ["Classificação negativa", C.classif, ""], ["Setor", C.setor, ""], ["Conferência", C.pend, "fixo"]];
+  const POR_PAGINA = 50;
+  const lista = { ordem: C.lib, desc: true, pagina: 0, linhas: [] };
+  function cabecalhoLista() {
+    campo("lista-cab").replaceChildren(...COLUNAS.map(([nome, col]) => {
+      const th = el("th", { scope: "col", tabindex: "0", "aria-sort": lista.ordem === col ? (lista.desc ? "descending" : "ascending") : "none" }, nome);
+      if (lista.ordem === col) th.append(el("span", { class: "seta", "aria-hidden": "true" }, lista.desc ? "▼" : "▲"));
+      aoAtivar(th, () => { if (lista.ordem === col) lista.desc = !lista.desc; else { lista.ordem = col; lista.desc = false; } lista.pagina = 0; desenharLista(); });
+      return th;
+    }));
+  }
+  function desenharLista() {
+    const col = lista.ordem, sinal = lista.desc ? -1 : 1;
+    const ordenadas = [...lista.linhas].sort((a, b) => {
+      const x = a[col], y = b[col];
+      if (typeof x === "number" || typeof y === "number") return sinal * ((x ?? -1) - (y ?? -1));
+      return sinal * String(x).localeCompare(String(y), "pt-BR", { numeric: true });
+    });
+    const paginas = Math.max(1, Math.ceil(ordenadas.length / POR_PAGINA));
+    lista.pagina = Math.min(lista.pagina, paginas - 1);
+    const inicio = lista.pagina * POR_PAGINA, pagina = ordenadas.slice(inicio, inicio + POR_PAGINA);
+    cabecalhoLista();
+    campo("lista-corpo").replaceChildren(...pagina.map((l) => {
+      const tr = el("tr");
+      for (const [, c, classe] of COLUNAS) {
+        const td = el("td", classe ? { class: classe } : null);
+        if (c === C.abertura || c === C.lib) td.textContent = dataBr(l[c]);
+        else if (c === C.pend) { if (l[c]) { const s = el("span", { class: "selo" }); s.append(icone(l[c]), el("span", null, PEND[l[c]].rotulo)); td.append(s); } }
+        else if (c === C.sga && divergente(l)) td.append(el("span", { class: "difere", title: "Diferente do status no SIGA" }, l[c]));
+        else td.textContent = l[c] === null ? "" : l[c];
+        tr.append(td);
+      }
+      return tr;
+    }));
+    if (!pagina.length) { const tr = el("tr"); tr.append(el("td", { colspan: COLUNAS.length, class: "vazio" }, "Nenhum evento com os filtros atuais.")); campo("lista-corpo").append(tr); }
+    campo("lista-info").textContent = ordenadas.length ? `Mostrando ${nf.format(inicio + 1)}–${nf.format(inicio + pagina.length)} de ${nf.format(ordenadas.length)}` : "";
+    campo("pag-num").textContent = `${lista.pagina + 1} / ${paginas}`;
+    campo("pag-ant").disabled = lista.pagina === 0; campo("pag-prox").disabled = lista.pagina >= paginas - 1;
+    lista.ordenadas = ordenadas;
+  }
+  campo("pag-ant").addEventListener("click", () => { lista.pagina--; desenharLista(); });
+  campo("pag-prox").addEventListener("click", () => { lista.pagina++; desenharLista(); });
+  campo("exportar").addEventListener("click", () => {
+    const aspas = (v) => '"' + String(v ?? "").replace(/"/g, '""') + '"';
+    const linhas = [COLUNAS.map(([n]) => aspas(n)).join(";")];
+    for (const l of lista.ordenadas || []) linhas.push(COLUNAS.map(([, c]) => aspas(c === C.abertura || c === C.lib ? dataBr(l[c]) : c === C.pend ? (PEND[l[c]] ? PEND[l[c]].rotulo : "") : l[c])).join(";"));
+    const a = el("a", { href: URL.createObjectURL(new Blob(["﻿" + linhas.join("\r\n")], { type: "text/csv;charset=utf-8" })), download: "conferencia-finalizados.csv" });
+    document.body.append(a); a.click(); a.remove();
+  });
+
+  // ---------------------------------------------------------------- tudo se redesenha sobre o mesmo recorte
+  function atualizar() {
+    const linhas = filtrar();
+    indicadores(linhas); mensal(linhas); pendencias(linhas); matriz(linhas); motivos(linhas);
+    lista.linhas = linhas; lista.pagina = 0; desenharLista();
+    campo("lista-sub").textContent = `${nf.format(linhas.length)} de ${nf.format(LINHAS.length)} eventos, conforme os filtros acima.`;
+  }
+
+  campo("gerado").textContent = D.gerado;
+  campo("descricao").textContent = `Eventos do SIGA liberados desde ${D.desde}, lado a lado com a situação de cada um no SGA. ` +
+    "A página marca o que a conferência costuma anotar: arquivados a verificar, eventos marcados para excluir e negativas sem motivo. " +
+    "O setor é o último em que o processo apareceu na aba SIGA; eventos que saíram da aba antes de o sistema começar a guardar isso ficam sem setor registrado.";
+  campo("fonte").textContent = `SGA: ${D.origem_sga} · SIGA: ${nf.format(D.eventos_siga)} eventos no histórico`;
+  const logo = campo("logo");
+  const textoLogo = () => { const t = el("div", { class: "texto" }); t.append(el("small", null, "GRUPO"), document.createTextNode("SUPPORT")); logo.replaceChildren(t); };
+  if (D.logo) { const img = el("img", { src: D.logo, alt: "Grupo Support" }); img.addEventListener("error", textoLogo); logo.append(img); } else textoLogo();
+  refletirFiltros();
+  atualizar();
+  let largura = 0;
+  new ResizeObserver(() => { const w = campo("mensal").clientWidth; if (w && Math.abs(w - largura) > 8) { largura = w; mensal(filtrar()); } }).observe(campo("mensal"));
+})();
+</script>
+</body>
+</html>

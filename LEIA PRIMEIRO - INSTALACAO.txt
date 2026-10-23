@@ -1,0 +1,67 @@
+INTEGRADOR SIGA x SGA - GRUPO SUPPORT
+=====================================
+Desenvolvido por WS Consultoria
+
+O QUE FAZ
+- Entra no SIGA (navegador escondido), baixa o Total Eventos Cadastrados de
+  2021 ate o ano atual e o Controle de Eventos.
+- Junta com os dados do SGA (pela API do SGA, se configurada, ou pelo
+  relatorio exportado salvo na pasta ENTRADA).
+- Atualiza as planilhas Excel (GERENCIAL SINISTRO, ANALISTAS, CONSULTORES
+  TECNICOS, REGULADORES) e os paineis HTML (Conferencia de finalizados e
+  Acompanhamento dos analistas) e salva tudo na pasta que voce escolher.
+
+REQUISITOS
+- Windows 10/11 64 bits com Microsoft Edge (ja vem no Windows).
+- Google Chrome (opcional): paineis e planilhas abrem nele.
+- Login e senha do SIGA; Internet.
+- O Python e tudo o que ele precisa ja vem em sistema\python.
+
+INSTALACAO
+1) Antes de extrair: clique com o botao direito no ZIP > Propriedades >
+   marque "Desbloquear" > OK (evita bloqueios do Windows).
+2) Extraia a pasta inteira para um lugar fixo do computador
+   (ex.: Documentos). Evite pastas sincronizadas pelo OneDrive.
+3) Dentro de "grupo support", dois cliques em "INSTALAR - PRIMEIRO ACESSO.bat".
+   Ele prepara as pastas e cria o icone "Grupo Support - Atualizar SIGA" na
+   Area de Trabalho e na pasta do Integrador.
+
+USO
+1) Dois cliques no icone "Grupo Support - Atualizar SIGA".
+2) Informe login e senha do SIGA. Marque "Lembrar" para nao digitar de novo
+   (fica criptografado e so funciona nesta conta do Windows). Se errar, a
+   tela avisa e voce corrige na hora.
+3) Escolha a pasta onde salvar os resultados (sugestao: a pasta do Integrador).
+4) Clique em "Conectar e atualizar". A barra mostra o andamento, a visao ao
+   vivo do navegador e o detalhe de cada etapa. Leva alguns minutos.
+5) Ao terminar, a aba "Resultados" mostra os dois paineis dentro da tela,
+   com botao para abrir no navegador, e os botoes das planilhas do Google
+   (cole o link de cada planilha uma vez no botao "+ Link").
+
+API DO SGA (opcional, recomendado)
+- Gere o token no SGA: Area Cliente > APIs > Gerenciar APIs > Novo
+  (Interveniente: Associacao; Permitir Acesso: SIM; libere "Autenticar
+  Usuario", "Evento - Listar" e "Evento - Listar Classificacao").
+- sistema\ferramentas\Configurar.bat abre o arquivo de configuracao:
+  preencha SGA_TOKEN, SGA_USUARIO e SGA_SENHA (sem aspas, sem espacos).
+- Teste com sistema\ferramentas\Testar acesso ao SGA.bat.
+- Sem a API, salve o relatorio de eventos do SGA na pasta ENTRADA.
+
+PRIMEIRA ATUALIZACAO
+- Este pacote vem SEM dados (nenhum associado, senha, historico ou planilha
+  preenchida). A primeira atualizacao monta as planilhas e os paineis.
+- Se a equipe ja tem planilhas em uso (com as colunas azuis preenchidas),
+  copie-as para a pasta RESULTADOS antes da primeira atualizacao.
+
+SEGURANCA
+- Senha do SIGA: criptografada pelo Windows, valida so para o usuario que salvou.
+- sistema\configuracao.env guarda o token/senha do SGA em texto: nao
+  envie esse arquivo a ninguem.
+- Planilhas e paineis contem dados de associados: uso interno.
+- Nao rode duas atualizacoes ao mesmo tempo e feche as planilhas antes.
+
+OBSERVACOES
+- A automacao depende das telas do SIGA; se o SIGA mudar, pode exigir ajuste.
+- Se a pasta mudar de lugar, rode sistema\ferramentas\Criar atalho.bat para
+  refazer o icone.
+- Modo texto (sem tela): "Atualizar agora.bat --texto".

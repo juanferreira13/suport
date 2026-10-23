@@ -1,0 +1,13 @@
+{
+  "name": "painel-grupo-support",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Site na Vercel que recebe e mostra os paineis do Integrador SIGA x SGA (Grupo Support).",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@vercel/blob": "^2.8.2"
+  }
+}

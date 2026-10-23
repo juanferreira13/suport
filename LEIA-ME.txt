@@ -1,0 +1,128 @@
+﻿SINISTRO - GRUPO SUPPORT
+========================
+
+O QUE TEM NESTA PASTA
+
+  Abrir painel        Abre no navegador o painel da conferência de finalizados.
+
+  Abrir acompanhamento
+                      Abre a página onde os analistas preenchem os processos.
+
+  Atualizar agora     Abre a tela de atualização (o mesmo que o atalho
+                      "Grupo Support - Atualizar SIGA", na pasta acima desta):
+                      login e senha do SIGA (com "Lembrar"), pasta onde salvar
+                      as planilhas Excel e os painéis HTML, barra de progresso
+                      e status. O navegador do SIGA trabalha escondido. Se o
+                      login for recusado, corrija na tela e conecte de novo.
+                      O atalho é criado por sistema\ferramentas\Criar atalho.
+                      Atualiza as planilhas e as páginas. Feche as planilhas antes.
+                      Normalmente não é preciso: a atualização roda sozinha
+                      todos os dias às 8h.
+
+  RESULTADOS          As planilhas e o painel, sempre na última versão:
+                        - GERENCIAL SINISTRO      (abas SGA, INTEGRAÇÃO, SIGA e TAREFAS)
+                        - ANALISTAS
+                        - CONSULTORES TECNICOS
+                        - REGULADORES
+                        - CONFERENCIA FINALIZADOS (o painel)
+                        - ACOMPANHAMENTO ANALISTAS (a página dos analistas)
+                        - REGISTRO DE EXPORTACOES (lista de tudo o que entrou
+                          no sistema, com data, quantidade de eventos e se
+                          foi MANUAL ou AUTOMÁTICO)
+
+  ENTRADA             Salve aqui os arquivos exportados dos sistemas:
+                        - DashBoard SIGA (.xlsx)
+                        - relatório de tarefas do SIGA (as atribuições; o que
+                          antes era colado na aba SIGA)
+                        - relatório de eventos do SGA (relatorio.xls)
+                        - arquivos salvos pela página de acompanhamento
+                      Eles são lidos na próxima atualização e depois vão para
+                      a subpasta "processados".
+                      Se o sistema estiver configurado para olhar outra pasta
+                      (ex.: a de uma exportação automática), os relatórios que
+                      caírem nela são copiados para a ENTRADA sozinhos.
+
+
+COMO USAR
+
+  1. Para ver o painel: dois cliques em "Abrir painel".
+
+  2. Para trabalhar nas planilhas: abra a que precisar na pasta RESULTADOS.
+     Nas colunas de título AZUL você digita; as de título VERDE são
+     preenchidas pelo sistema a cada atualização.
+
+  3. Depois de colar linhas novas na aba SIGA ou de salvar arquivos na pasta
+     ENTRADA: feche as planilhas e dê dois cliques em "Atualizar agora".
+
+
+PLANILHAS NO GOOGLE
+
+  Quando o sistema está ligado às planilhas do Google, é nelas que se
+  trabalha (os arquivos .xlsx de RESULTADOS deixam de ser atualizados):
+
+  - GERENCIAL SINISTRO: salve o relatório de tarefas do SIGA na pasta
+    ENTRADA (ou cole na aba SIGA, como antes). O sistema preenche as abas
+    SIGA, SGA e INTEGRAÇÃO. Tarefa nova do SIGA precisa entrar na aba
+    TAREFAS, com o setor; sem isso ela não vai para nenhum setor.
+
+  Só um computador deve rodar o sistema para as mesmas planilhas. Ao
+  instalar em outro, rode "Remover agendamento" no anterior.
+  - ANALISTAS: use as abas ANALISTAS e VIDROS. Não é mais preciso
+    duplicar as abas com a data do dia; as observações são mantidas.
+  - CONSULTORES TECNICOS e REGULADORES: as mesmas abas de sempre. As
+    observações e o "regularizado por" são mantidos.
+
+  As colunas de título VERDE são preenchidas pelo sistema; as de título
+  AZUL são da equipe. As abas Oficinas, VISTORIA PRESENCIAL e REGULADORES
+  ANALISTA continuam com a equipe.
+
+
+ACOMPANHAMENTO DOS ANALISTAS (página)
+
+  Dois cliques em "Abrir acompanhamento". A página mostra quantos processos
+  das listas ANALISTAS e VIDROS estão a preencher, atrasados, em dia e
+  concluídos (por situação e por analista), as últimas alterações e a lista
+  dos processos, cada um com os campos para preencher:
+    - ANALISTA      só se não for o responsável que está no SIGA
+    - SITUAÇÃO      escolha na lista
+    - PRÓXIMA AÇÃO  o que falta fazer
+    - PRAZO         data; passou do prazo = Atrasado
+    - OBSERVAÇÃO    a mesma da coluna OBSERVAÇÃO da planilha ANALISTAS
+
+  Para preencher:
+    1. Escreva seu nome em "Quem está preenchendo".
+    2. Preencha os processos. O que você muda fica marcado "não salvo"
+       (fica guardado no navegador, mesmo se fechar a página).
+    3. Clique em "Salvar alterações" e salve o arquivo na pasta ENTRADA
+       desta pasta. Na próxima vez o navegador já abre nessa pasta.
+       Se o arquivo for para Downloads: no computador que roda o sistema
+       ele é lido de lá mesmo; em outro computador, mova para ENTRADA.
+
+  As alterações entram no sistema na próxima atualização (8h, ou "Atualizar
+  agora"). Aí a página é refeita com o que todos salvaram. Se um arquivo
+  não chegar, a página avisa e as alterações voltam para "não salvo".
+
+
+COMO EXPORTAR O DASHBOARD DO SIGA
+
+  O SIGA não tem integração automática: os eventos vêm de uma exportação.
+  Faça para cada ano, de 2021 até o ano atual (depois, só o ano atual):
+
+  1. No SIGA, abra RELATÓRIOS > Dashboard Arco > aba Gerencial.
+  2. À esquerda, selecione GRUPO SUPPORT, o ano e o mês (para anos que já
+     terminaram, Dezembro).
+  3. No gráfico "Total Eventos Cadastrados", clique na barra Total.
+  4. Na janela que abrir, clique em Excel.
+  5. Salve o arquivo na pasta ENTRADA (pode deixar o nome que vier).
+
+  Pode salvar os arquivos de vários anos de uma vez. Na próxima atualização
+  todos são lidos; o registro (sistema\logs) avisa quais anos ainda faltam.
+
+
+IMPORTANTE
+
+  - Mantenha esta pasta inteira, como está. Para levar a outro computador,
+    copie a pasta toda.
+  - Se uma planilha estiver aberta na hora da atualização, ela não é gravada.
+    Feche e rode "Atualizar agora".
+  - Os arquivos têm dados de associados: uso interno.
