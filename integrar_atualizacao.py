@@ -234,6 +234,9 @@ def main():
         env = os.environ.copy()
         env['SIGA_V3_SAIDA'] = str(pasta)
         env['SIGA_V3_LOG'] = str(log)
+        # Sem janela do SIGA quando ninguem definiu (ex.: tarefa agendada ou modo --texto).
+        # A tela de atualizacao ja define SIGA_V3_OCULTO=1, entao aqui nao muda nada por ela.
+        env.setdefault('SIGA_V3_OCULTO', '1')
         progresso(1, 'Preparando')
         print('[1/3] Exportacao SIGA v3 em pasta isolada...', flush=True)
         ret = subprocess.call([sys.executable, str(V3)], cwd=str(V3.parent), env=env)
