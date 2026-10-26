@@ -189,16 +189,24 @@ class SgaApi:
         self.token_usuario = tok
 
     def classificacoes(self) -> dict[str, str]:
-        """Código -> descrição das classificações de evento. Vazio se o endpoint não estiver liberado."""
-        status, dados = self._requisicao("GET", "listar/classificacao-evento/todos")
+        """Código -> descrição das classificações de evento. Vazio se o endpoint não estiver liberado ou a API falhar."""
+        try:
+            status, dados = self._requisicao("GET", "listar/classificacao-evento/todos")
+        except SgaApiErro as e:
+            self.log.warning("API: não consegui listar as classificações de evento (%s). Sigo sem elas.", e)
+            return {}
         if status != 200 or not isinstance(dados, list):
             self.log.warning("API: não consegui listar as classificações de evento (HTTP %s): %s", status, _resumo(dados))
             return {}
         return {texto(c.get("codigo")).strip(): texto(c.get("descricao")).strip() for c in dados if isinstance(c, dict)}
 
     def _lista(self, caminho: str) -> list[dict]:
-        """GET de uma listagem; vazio (com aviso) se o endpoint não estiver liberado no token."""
-        status, dados = self._requisicao("GET", caminho)
+        """GET de uma listagem; vazio (com aviso) se o endpoint não estiver liberado ou a API falhar."""
+        try:
+            status, dados = self._requisicao("GET", caminho)
+        except SgaApiErro as e:
+            self.log.warning("API: não consegui ler %s (%s). Sigo sem esses dados.", caminho, e)
+            return []
         if isinstance(dados, dict):
             dados = next((v for v in dados.values() if isinstance(v, list)), [dados] if "nome" in dados else None)
         if status != 200 or not isinstance(dados, list):
@@ -239,43 +247,60 @@ class SgaApi:
             self._avisos.add(mensagem)
             self.log.log(30 if aviso else 20, "API: %s", mensagem)
 
+    def _coletar_janela(self, dia: datetime.date, ate: datetime.date, por_pagina: int, itens: dict[str, dict]) -> None:
+        """Coleta os eventos de um período (uma janela) para dentro de `itens`. Pode lançar SgaApiErro."""
+        vistos: set[str] = set()
+        posicao, por_deslocamento = 0, False
+        for _ in range(MAX_PAGINAS):
+            pagina = self._pagina({
+                "data_cadastro": dia.strftime("%d/%m/%Y"), "data_cadastro_final": ate.strftime("%d/%m/%Y"),
+                "inicio_paginacao": posicao, "quantidade_por_pagina": por_pagina,
+            })
+            novos = 0
+            for item in pagina:
+                chave = texto(item.get("codigo")) or json.dumps(item, sort_keys=True, ensure_ascii=False)
+                if chave not in vistos:
+                    vistos.add(chave)
+                    itens[f"{dia}|{chave}"] = item
+                    novos += 1
+            if novos == 0:
+                if pagina and posicao:
+                    self._avisar("uma página repetiu os mesmos eventos da anterior; se o total de itens parecer "
+                                 "baixo, a paginação da API não está respondendo como documentado")
+                break
+            if len(pagina) < por_pagina:  # página incompleta: era a última do período
+                break
+            # A documentação não diz se inicio_paginacao é nº da página ou deslocamento.
+            # Se a "página 1" repetir quase tudo da anterior, é deslocamento.
+            if not por_deslocamento and posicao >= 1 and len(pagina) > 5 and novos < len(pagina) / 2:
+                por_deslocamento = True
+            posicao = len(vistos) if por_deslocamento else posicao + 1
+        self.log.info("API: %s a %s -> %d itens", dia.strftime("%d/%m/%Y"), ate.strftime("%d/%m/%Y"), len(vistos))
+
     def listar_eventos(self, inicio: datetime.date, fim: datetime.date, por_pagina: int = LIMITE_POR_PAGINA) -> list[dict]:
-        """Todos os itens de evento cadastrados entre as duas datas."""
+        """Todos os itens de evento cadastrados entre as duas datas.
+
+        Se a API falhar num período (ex.: HTTP 502 em datas recentes), esse período é PULADO com um
+        aviso, sem derrubar o resto: os eventos das janelas que funcionaram continuam valendo.
+        """
         if not self.token_usuario:
             self.autenticar()
         por_pagina = max(1, min(por_pagina, LIMITE_POR_PAGINA))
         itens: dict[str, dict] = {}
+        janelas_com_erro = 0
         dia = inicio
         while dia <= fim:
             ate = min(dia + datetime.timedelta(days=JANELA_DIAS - 1), fim)
-            vistos: set[str] = set()
-            posicao, por_deslocamento = 0, False
-            for _ in range(MAX_PAGINAS):
-                pagina = self._pagina({
-                    "data_cadastro": dia.strftime("%d/%m/%Y"), "data_cadastro_final": ate.strftime("%d/%m/%Y"),
-                    "inicio_paginacao": posicao, "quantidade_por_pagina": por_pagina,
-                })
-                novos = 0
-                for item in pagina:
-                    chave = texto(item.get("codigo")) or json.dumps(item, sort_keys=True, ensure_ascii=False)
-                    if chave not in vistos:
-                        vistos.add(chave)
-                        itens[f"{dia}|{chave}"] = item
-                        novos += 1
-                if novos == 0:
-                    if pagina and posicao:
-                        self._avisar("uma página repetiu os mesmos eventos da anterior; se o total de itens parecer "
-                                     "baixo, a paginação da API não está respondendo como documentado")
-                    break
-                if len(pagina) < por_pagina:  # página incompleta: era a última do período
-                    break
-                # A documentação não diz se inicio_paginacao é nº da página ou deslocamento.
-                # Se a "página 1" repetir quase tudo da anterior, é deslocamento.
-                if not por_deslocamento and posicao >= 1 and len(pagina) > 5 and novos < len(pagina) / 2:
-                    por_deslocamento = True
-                posicao = len(vistos) if por_deslocamento else posicao + 1
-            self.log.info("API: %s a %s -> %d itens", dia.strftime("%d/%m/%Y"), ate.strftime("%d/%m/%Y"), len(vistos))
+            try:
+                self._coletar_janela(dia, ate, por_pagina, itens)
+            except SgaApiErro as e:
+                janelas_com_erro += 1
+                self.log.warning("API: pulei o período %s a %s porque a API falhou (%s).",
+                                 dia.strftime("%d/%m/%Y"), ate.strftime("%d/%m/%Y"), e)
             dia = ate + datetime.timedelta(days=1)
+        if janelas_com_erro:
+            self.log.warning("API: %d período(s) não puderam ser lidos (API instável ou fora do ar). Para trazer "
+                             "esses eventos, exporte o relatório de eventos do SGA para a pasta ENTRADA.", janelas_com_erro)
         return list(itens.values())
 
     def sondar_eventos(self, inicio: datetime.date, fim: datetime.date, protocolo: str = "") -> list[tuple[str, int, int, str]]:
