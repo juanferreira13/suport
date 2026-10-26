@@ -40,7 +40,16 @@ from openpyxl.utils import get_column_letter
 from . import acompanhamento as A
 from . import integracao as I
 from . import planilha as P
+from . import sga_base as S
 from .util import data_br, texto, trim
+
+
+def _ultima_data_br(valores) -> str:
+    """A data mais recente (dd/mm/aaaa) de uma sequência de textos, ignorando datas futuras (erros de
+    digitação) e vazias. Devolve '' se não houver nenhuma válida."""
+    hoje = datetime.date.today()
+    datas = [d for d in (data_br(v) for v in valores) if d and d <= hoje]
+    return max(datas).strftime("%d/%m/%Y") if datas else ""
 
 N_SIGA = 41  # colunas A..AO da aba SIGA, repetidas em todas as abas de setor
 AL_CNPJ, AP_PARTICIPACAO = I.AL, I.AP
@@ -692,7 +701,12 @@ def atualizar(cfg, log, siga: list[tuple[int, list]], resultado: I.Resultado, ta
 
     if cfg.pagina_acompanhamento:
         try:
-            n = A.gerar_pagina(cfg.pagina_acompanhamento, processos_analistas(ctx.linhas), manuais, historico)
+            ultimo_sga = _ultima_data_br(l[S.DT_COMUNICADO] if len(l) > S.DT_COMUNICADO else "" for l in sga)
+            ultimo_siga = _ultima_data_br(l[I.E_ABERTURA] if len(l) > I.E_ABERTURA else "" for _, l in siga)
+            veiculos = S.BaseVeiculos(cfg.pasta_dados)
+            veiculos.carregar()
+            n = A.gerar_pagina(cfg.pagina_acompanhamento, processos_analistas(ctx.linhas), manuais, historico,
+                               ultimo_sga, ultimo_siga, veiculos.dados)
             log.info("Página %s: %d processos; %d a preencher, %d atrasados, %d em dia, %d concluídos.",
                      cfg.pagina_acompanhamento.name, sum(n.values()), n["PREENCHER"], n["ATRASADO"], n["EM DIA"], n["CONCLUÍDO"])
         except OSError as e:

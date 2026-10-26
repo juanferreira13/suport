@@ -186,6 +186,12 @@ def _consultar_api(cfg: Config, base: S.BaseSga, log) -> None:
     resumo = base.aplicar_api(_normalizar(api, itens, classificacoes), cfg.data_inicial, log)
     log.info("API SGA: %d itens em %d chamadas -> %d linhas novas; alterações por coluna: %s; %d itens sem par único (mantidos como estavam).",
              len(itens), api.chamadas, resumo["novos"], resumo["alteracoes"] or "nenhuma", resumo["ambiguos"])
+    # Marca/modelo do veículo (só a API traz): guardados à parte, para os indicadores de Vidros do painel.
+    veiculos = S.BaseVeiculos(cfg.pasta_dados)
+    veiculos.carregar()
+    mudou = veiculos.aplicar_api(itens)
+    veiculos.salvar()
+    log.info("API SGA: marca/modelo guardados para %d veículos novos/alterados (total %d).", mudou, len(veiculos.dados))
     registro.anotar(cfg.registro, registro.AUTOMATICO, "SGA", f"API desde {cfg.data_inicial:%d/%m/%Y}",
                     len(itens), f"importado: {resumo['novos']} novos, {sum(resumo['alteracoes'].values())} alterações", "", log)
     base.origem = f"{base.origem} + API em {datetime.datetime.now():%d/%m/%Y %H:%M}".strip(" +")

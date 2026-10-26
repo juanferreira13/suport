@@ -245,3 +245,43 @@ class BaseSga:
                 incluidos += 1
         return {"novos": incluidos, "alteracoes": dict(alteradas), "ambiguos": ambiguos,
                 "incompativeis": list(incompativeis)}
+
+
+class BaseVeiculos:
+    """Marca/modelo do veículo por protocolo do SGA (só a API traz; guardados em dados/veiculos.json).
+
+    Não entram na aba SGA (que tem layout fixo com as fórmulas da equipe); servem só para os
+    indicadores de Vidros do painel. A cobertura cresce a cada execução que consulta a API."""
+
+    def __init__(self, pasta_dados: Path):
+        self.arquivo = pasta_dados / "veiculos.json"
+        self.dados: dict[str, dict[str, str]] = {}   # protocolo -> {"marca": ..., "modelo": ...}
+
+    def carregar(self) -> None:
+        if self.arquivo.exists():
+            try:
+                self.dados = json.loads(self.arquivo.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                self.dados = {}
+
+    def salvar(self) -> None:
+        self.arquivo.parent.mkdir(parents=True, exist_ok=True)
+        tmp = self.arquivo.with_suffix(".tmp")
+        tmp.write_text(json.dumps(self.dados, ensure_ascii=False), encoding="utf-8")
+        tmp.replace(self.arquivo)
+
+    def aplicar_api(self, itens_api: list[dict]) -> int:
+        """Guarda marca/modelo de cada evento cru da API (item['veiculo']). Devolve quantos mudaram."""
+        mudou = 0
+        for item in itens_api:
+            if not isinstance(item, dict):
+                continue
+            prot = texto(item.get("protocolo") or item.get("protocolo_evento")).strip()
+            veic = item.get("veiculo")
+            if not prot or not isinstance(veic, dict):
+                continue
+            novo = {"marca": texto(veic.get("marca")).strip(), "modelo": texto(veic.get("modelo")).strip()}
+            if (novo["marca"] or novo["modelo"]) and self.dados.get(prot) != novo:
+                self.dados[prot] = novo
+                mudou += 1
+        return mudou

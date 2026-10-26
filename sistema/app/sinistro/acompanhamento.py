@@ -205,8 +205,9 @@ def aplicar(arquivos: list[Path], manuais, historico: Historico, arquivo_registr
 
 # ----------------------------------------------------------------------------- a página
 
-def _linhas_pagina(listas: list[tuple[str, list]], manuais) -> list[list[str]]:
+def _linhas_pagina(listas: list[tuple[str, list]], manuais, veiculos: dict | None = None) -> list[list[str]]:
     """Um item por processo, na ordem das colunas que a página espera (ver `P` no modelo)."""
+    veiculos = veiculos or {}
     saida, vistos = [], {}
     for nome_lista, processos in listas:
         for l in processos:
@@ -220,26 +221,36 @@ def _linhas_pagina(listas: list[tuple[str, list]], manuais) -> list[list[str]]:
                     anterior[6] = f"{anterior[6]}; {tarefa}".strip("; ")
                 continue
             abertura = _como_data(v[I.E_ABERTURA])
+            vd = veiculos.get(trim(v[I.AF])) or {}   # marca/modelo do veículo, pelo protocolo SGA
             linha = [nome_lista, numero, trim(v[I.AF]), trim(v[I.I_NOME]), trim(v[10]), trim(v[I.H_EVENTO]), tarefa, trim(v[15]),
                      abertura.isoformat() if abertura else "", trim(v[I.AE]), trim(v[I.AG]),
                      manuais.obter(CAMPOS["analista"], numero), manuais.obter(CAMPOS["situacao"], numero),
                      manuais.obter(CAMPOS["proxima"], numero), manuais.obter(CAMPOS["prazo"], numero),
                      manuais.obter(grupo("obs", nome_lista), numero),
-                     manuais.obter(GRUPO_ATUALIZADO, numero), manuais.obter(GRUPO_ATUALIZADO_POR, numero)]
+                     manuais.obter(GRUPO_ATUALIZADO, numero), manuais.obter(GRUPO_ATUALIZADO_POR, numero),
+                     trim(v[I.AD]), trim(v[I.AR]), trim(v[I.AO]),   # Estado, Cidade, Equipe (ex-Cooperativa) da aba SIGA
+                     trim(vd.get("marca", "")), trim(vd.get("modelo", ""))]   # Marca, Modelo (da API do SGA)
             vistos[numero] = linha
             saida.append(linha)
     return saida
 
 
-def gerar_pagina(destino: Path, listas: list[tuple[str, list]], manuais, historico: Historico) -> collections.Counter:
-    """Grava a página e devolve quantos processos há em cada pendência (para o log)."""
+def gerar_pagina(destino: Path, listas: list[tuple[str, list]], manuais, historico: Historico,
+                 ultimo_sga: str = "", ultimo_siga: str = "", veiculos: dict | None = None) -> collections.Counter:
+    """Grava a página e devolve quantos processos há em cada pendência (para o log).
+
+    `ultimo_sga` / `ultimo_siga`: data do evento mais recente de cada sistema (dd/mm/aaaa), mostrada no
+    cabeçalho para a equipe saber até quando os dados estão atualizados.
+    `veiculos`: protocolo SGA -> {marca, modelo}, para os indicadores de Vidros."""
     agora = datetime.datetime.now()
-    processos = _linhas_pagina(listas, manuais)
+    processos = _linhas_pagina(listas, manuais, veiculos)
     analistas = sorted({p[7] for p in processos if p[7]} | {p[11] for p in processos if p[11]}, key=str.upper)
     pessoas = sorted(set(analistas) | {a[1] for a in historico.alteracoes if a[1] and a[1] != QUEM_PLANILHA}, key=str.upper)
     dados = {
         "gerado": agora.strftime("%d/%m/%Y %H:%M"),
         "gerado_iso": agora.strftime("%Y-%m-%dT%H:%M:%S"),
+        "ultimo_sga": ultimo_sga,
+        "ultimo_siga": ultimo_siga,
         "logo": _logo(),
         "tipo": TIPO_ARQUIVO,
         "prefixo": PREFIXO_ARQUIVO,
