@@ -256,6 +256,7 @@
   <label class="campo">Estado <select id="f-estado"></select></label>
   <label class="campo">Cidade <select id="f-cidade"></select></label>
   <label class="campo">Equipe <select id="f-equipe"></select></label>
+  <label class="campo">Regulador <select id="f-regulador"></select></label>
   <label class="campo">Situação <select id="f-situacao"></select></label>
   <label class="campo">Pendência <select id="f-pend"></select></label>
   <label class="campo">Buscar <input id="f-busca" type="search" placeholder="protocolo, nome ou placa"></label>
@@ -279,6 +280,11 @@
       <h2>Vidros — veículos mais acionados</h2>
       <p class="sub">Marca e modelo dos processos de VIDROS, por quantidade de acionamentos. Respeita os filtros acima.</p>
       <div class="rolagem" id="tab-veiculos"></div>
+    </section>
+    <section class="cartao" id="por-regulador">
+      <h2>Por regulador analista</h2>
+      <p class="sub">Processos analisados por profissional (produtividade e distribuição). Clique para filtrar.</p>
+      <div class="rolagem" id="tab-reguladores"></div>
     </section>
     <section class="cartao" id="processos">
       <div class="cabeca"><div><h2>Processos</h2><p class="sub" id="lista-sub"></p></div>
@@ -319,7 +325,7 @@
   const D = JSON.parse(document.getElementById("dados").textContent);
   const P = { lista: 0, prot: 1, sga: 2, nome: 3, placa: 4, evento: 5, tarefa: 6, resp: 7, abertura: 8, stSga: 9, stSiga: 10,
               analista: 11, situacao: 12, proxima: 13, prazo: 14, obs: 15, atualEm: 16, atualPor: 17,
-              estado: 18, cidade: 19, equipe: 20, marca: 21, modelo: 22 };
+              estado: 18, cidade: 19, equipe: 20, marca: 21, modelo: 22, regulador: 23 };
   const CAMPOS = { analista: { rotulo: "Analista", col: P.analista }, situacao: { rotulo: "Situação", col: P.situacao },
                    proxima: { rotulo: "Próxima ação", col: P.proxima }, prazo: { rotulo: "Prazo", col: P.prazo }, obs: { rotulo: "Observação", col: P.obs } };
   const NOMES_CAMPOS = Object.keys(CAMPOS);
@@ -394,7 +400,7 @@
   // ---------------------------------------------------------------- processos e o que foi preenchido neste computador
   const PROCS = D.processos.map((l) => ({
     l, prot: l[P.prot], dias: l[P.abertura] ? diasEntre(l[P.abertura], HOJE) : null,
-    busca: semAcento([l[P.prot], l[P.sga], l[P.nome], l[P.placa], l[P.placa].replace(/-/g, ""), l[P.estado], l[P.cidade], l[P.equipe], l[P.marca], l[P.modelo]].join(" ")),
+    busca: semAcento([l[P.prot], l[P.sga], l[P.nome], l[P.placa], l[P.placa].replace(/-/g, ""), l[P.estado], l[P.cidade], l[P.equipe], l[P.marca], l[P.modelo], l[P.regulador]].join(" ")),
   }));
   const porProt = new Map(PROCS.map((p) => [p.prot, p]));
 
@@ -461,7 +467,7 @@
   }
 
   // ---------------------------------------------------------------- filtros
-  const F = { lista: "", analista: "", estado: "", cidade: "", equipe: "", situacao: null, pend: "", ordem: "prioridade", busca: "" };
+  const F = { lista: "", analista: "", estado: "", cidade: "", equipe: "", regulador: "", situacao: null, pend: "", ordem: "prioridade", busca: "" };
   function opcoes(select, pares) { select.replaceChildren(...pares.map(([v, t]) => el("option", { value: v }, t))); }
   const NOMES_ANALISTAS = [...new Set([...PROCS.map(analistaDe), ...D.analistas])].sort((a, b) => a.localeCompare(b, "pt-BR"));
   const distintos = (col) => [...new Set(PROCS.map((p) => (p.l[col] || "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt-BR"));
@@ -470,6 +476,7 @@
   opcoes(campo("f-estado"), [["", "Todos"], ...distintos(P.estado).map((v) => [v, v])]);
   opcoes(campo("f-cidade"), [["", "Todas"], ...distintos(P.cidade).map((v) => [v, v])]);
   opcoes(campo("f-equipe"), [["", "Todas"], ...distintos(P.equipe).map((v) => [v, v])]);
+  opcoes(campo("f-regulador"), [["", "Todos"], ...distintos(P.regulador).map((v) => [v, v])]);
   opcoes(campo("f-situacao"), [["*", "Todas"], ["", "(não preenchida)"], ...D.situacoes.map((s) => [s, s])]);
   opcoes(campo("f-pend"), [["", "Todas"], ["acao", "Precisam de ação"], ["ATRASADO", "Atrasados"], ["PREENCHER", "A preencher"], ["EM DIA", "Em dia"],
     ["CONCLUÍDO", "Concluídos"], ["naosalvo", "Com alterações não salvas"]]);
@@ -480,25 +487,28 @@
     if (F.analista && ![...a.options].some((o) => o.value === F.analista)) a.append(el("option", { value: F.analista }, F.analista));
     campo("f-lista").value = F.lista; a.value = F.analista;
     campo("f-estado").value = F.estado; campo("f-cidade").value = F.cidade; campo("f-equipe").value = F.equipe;
+    campo("f-regulador").value = F.regulador;
     campo("f-situacao").value = F.situacao === null ? "*" : F.situacao;
     campo("f-pend").value = F.pend; campo("f-ordem").value = F.ordem; campo("f-busca").value = F.busca;
   }
   function lerFiltros() {
     F.lista = campo("f-lista").value; F.analista = campo("f-analista").value;
     F.estado = campo("f-estado").value; F.cidade = campo("f-cidade").value; F.equipe = campo("f-equipe").value;
+    F.regulador = campo("f-regulador").value;
     F.situacao = campo("f-situacao").value === "*" ? null : campo("f-situacao").value;
     F.pend = campo("f-pend").value; F.ordem = campo("f-ordem").value; F.busca = campo("f-busca").value.trim();
   }
-  for (const id of ["f-lista", "f-analista", "f-estado", "f-cidade", "f-equipe", "f-situacao", "f-pend", "f-ordem"]) campo(id).addEventListener("change", () => { lerFiltros(); atualizar(); });
+  for (const id of ["f-lista", "f-analista", "f-estado", "f-cidade", "f-equipe", "f-regulador", "f-situacao", "f-pend", "f-ordem"]) campo(id).addEventListener("change", () => { lerFiltros(); atualizar(); });
   let espera = 0;
   campo("f-busca").addEventListener("input", () => { clearTimeout(espera); espera = setTimeout(() => { lerFiltros(); atualizar(); }, 180); });
-  campo("limpar").addEventListener("click", () => { Object.assign(F, { lista: "", analista: "", estado: "", cidade: "", equipe: "", situacao: null, pend: "", busca: "" }); refletirFiltros(); atualizar(); });
+  campo("limpar").addEventListener("click", () => { Object.assign(F, { lista: "", analista: "", estado: "", cidade: "", equipe: "", regulador: "", situacao: null, pend: "", busca: "" }); refletirFiltros(); atualizar(); });
 
   // recorte = lista, analista e busca (o painel mostra a situação e a pendência dentro dele)
-  function recorte(comAnalista) {
+  function recorte(comAnalista, comRegulador = true) {
     const termo = semAcento(F.busca);
     return PROCS.filter((p) => (!F.lista || p.l[P.lista] === F.lista) && (!comAnalista || !F.analista || analistaDe(p) === F.analista)
       && (!F.estado || p.l[P.estado] === F.estado) && (!F.cidade || p.l[P.cidade] === F.cidade) && (!F.equipe || p.l[P.equipe] === F.equipe)
+      && (!comRegulador || !F.regulador || p.l[P.regulador] === F.regulador)
       && (!termo || p.busca.includes(termo)));
   }
   function filtrar() {
@@ -613,6 +623,37 @@
     caixa.replaceChildren(t);
   }
 
+  // ---------------------------------------------------------------- por regulador analista (produtividade)
+  function reguladoresTab(rec) {
+    const caixa = campo("tab-reguladores");
+    const m = new Map();
+    for (const p of rec) {
+      const r = (p.l[P.regulador] || "").trim();
+      if (!r) continue;
+      const o = m.get(r) || { total: 0, "PREENCHER": 0, "ATRASADO": 0, "EM DIA": 0, "CONCLUÍDO": 0 };
+      o.total++; o[pendencia(p)]++; m.set(r, o);
+    }
+    if (!m.size) { caixa.replaceChildren(el("div", { class: "vazio" }, "Sem regulador analista nos processos filtrados.")); return; }
+    const t = el("table", { class: "dados" });
+    const cab = el("tr");
+    for (const nome of ["Regulador analista", "Processos", "A preencher", "Atrasados", "Em dia", "Concluídos", "Preenchido"]) cab.append(el("th", { scope: "col" }, nome));
+    t.appendChild(el("thead")).append(cab);
+    const corpo = t.appendChild(el("tbody"));
+    for (const [nome, o] of [...m.entries()].sort((a, b) => b[1].total - a[1].total || a[0].localeCompare(b[0], "pt-BR"))) {
+      const tr = el("tr", { tabindex: "0", role: "button", class: F.regulador === nome ? "ativa" : "", "aria-label": `${nome}: ${o.total} processos. Filtrar a lista` });
+      tr.append(el("td", null, nome), el("td", null, nf.format(o.total)));
+      for (const k of ["PREENCHER", "ATRASADO", "EM DIA", "CONCLUÍDO"]) tr.append(el("td", o[k] ? null : { class: "zero" }, nf.format(o[k])));
+      const feitos = o.total - o["PREENCHER"];
+      const prog = el("span", { class: "progresso" }), trilho = el("span", { class: "trilho" }), barra = el("span", { class: "barra" });
+      barra.style.width = (100 * feitos / o.total) + "%"; trilho.append(barra);
+      prog.append(trilho, el("span", { class: "pct" }, pct(feitos, o.total)));
+      const td = el("td"); td.append(prog); tr.append(td);
+      aoAtivar(tr, () => { F.regulador = F.regulador === nome ? "" : nome; refletirFiltros(); atualizar(); rolarLista(); });
+      corpo.append(tr);
+    }
+    caixa.replaceChildren(t);
+  }
+
   // ---------------------------------------------------------------- lista de processos para preencher
   const POR_PAGINA = 25;
   const lista = { pagina: 0, itens: [] };
@@ -720,13 +761,13 @@
     const aspas = (v) => '"' + String(v ?? "").replace(/"/g, '""') + '"';
     const cab = ["Lista", "Protocolo SIGA", "Protocolo SGA", "Nome", "Placa", "Evento", "Tarefa no SIGA", "Responsável no SIGA", "Abertura", "Dias em aberto",
                  "Status SIGA", "Status SGA", "Analista", "Situação", "Próxima ação", "Prazo", "Observação", "Pendência", "Atualizado em", "Atualizado por",
-                 "Estado", "Cidade", "Equipe", "Marca", "Modelo"];
+                 "Estado", "Cidade", "Equipe", "Marca", "Modelo", "Regulador analista"];
     const linhas = [cab.map(aspas).join(";")];
     for (const p of lista.itens) {
       const l = p.l;
       linhas.push([l[P.lista], l[P.prot], l[P.sga], l[P.nome], l[P.placa], l[P.evento], l[P.tarefa], l[P.resp], dataBr(l[P.abertura]), p.dias ?? "",
                    l[P.stSiga], l[P.stSga], valor(p, "analista"), valor(p, "situacao"), valor(p, "proxima"), dataBr(valor(p, "prazo")), valor(p, "obs"),
-                   PEND[pendencia(p)].rotulo, momentoBr(l[P.atualEm]), l[P.atualPor], l[P.estado], l[P.cidade], l[P.equipe], l[P.marca], l[P.modelo]].map(aspas).join(";"));
+                   PEND[pendencia(p)].rotulo, momentoBr(l[P.atualEm]), l[P.atualPor], l[P.estado], l[P.cidade], l[P.equipe], l[P.marca], l[P.modelo], l[P.regulador]].map(aspas).join(";"));
     }
     const a = el("a", { href: URL.createObjectURL(new Blob(["﻿" + linhas.join("\r\n")], { type: "text/csv;charset=utf-8" })), download: "acompanhamento-analistas.csv" });
     document.body.append(a); a.click(); a.remove();
@@ -868,7 +909,7 @@
   window.addEventListener("beforeunload", (e) => { if (Object.keys(E.rascunho).length) { e.preventDefault(); e.returnValue = ""; } });
 
   // ---------------------------------------------------------------- tudo se redesenha sobre o mesmo recorte
-  function resumo() { const rec = recorte(true); indicadores(rec); situacoes(rec); analistas(recorte(false)); veiculos(rec); }
+  function resumo() { const rec = recorte(true); indicadores(rec); situacoes(rec); analistas(recorte(false)); veiculos(rec); reguladoresTab(recorte(true, false)); }
   function atualizar() { resumo(); lista.pagina = 0; desenharLista(); }
 
   campo("gerado").textContent = D.gerado;

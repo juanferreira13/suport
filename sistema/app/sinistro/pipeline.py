@@ -199,7 +199,7 @@ def _consultar_api(cfg: Config, base: S.BaseSga, log) -> None:
 
 # ---------------------------------------------------------------- sinistro no Google Sheets
 ABAS_GOOGLE = {planilha.ABA_SGA: "A:AB", planilha.ABA_INTEGRACAO: "A:S", planilha.ABA_SIGA: "A:AS",
-               planilha.ABA_TAREFAS: "A:C", setores.ABA_BASE_VISTORIA: "A:C"}
+               planilha.ABA_TAREFAS: "A:C", setores.ABA_BASE_VISTORIA: "A:C", setores.ABA_BASE_REGULADOR: "A:C"}
 SGA_FORMULAS = (S.N_COLUNAS + 1, S.N_COLUNAS + 5)          # AD..AH: NOME, PLACA, COMPETENCIA, STATUS SIGA, chave
 INTEGRACAO_FORMULAS = (G.N_COLUNAS + 1, G.N_COLUNAS + 3)   # T..V: PROTOCOLO, PLACA 2, COMPETENCIA
 SIGA_FORMULAS_A, SIGA_FORMULAS_X = (1, 1), (len(G.COLUNAS_TAREFAS) + 2, integracao.SIGA_COLUNAS)   # A e X..AS da aba SIGA
@@ -465,7 +465,8 @@ def executar(etapa_sga: bool, etapa_integracao: bool, usar_api: bool = True, eta
         if etapa_setores:
             falhas, incorporados = setores.atualizar(cfg, log, siga, resultado, abas[planilha.ABA_TAREFAS], base_sga.linhas,
                                                      base_integ.linhas, entrada_pagina, google=conta,
-                                                     base_vistoria=tabelas_google.get(setores.ABA_BASE_VISTORIA))
+                                                     base_vistoria=tabelas_google.get(setores.ABA_BASE_VISTORIA),
+                                                     base_regulador=tabelas_google.get(setores.ABA_BASE_REGULADOR))
             _arquivar(incorporados, cfg, log)
             if falhas:
                 codigo = PARCIAL

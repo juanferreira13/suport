@@ -51,6 +51,17 @@ def _ultima_data_br(valores) -> str:
     datas = [d for d in (data_br(v) for v in valores) if d and d <= hoje]
     return max(datas).strftime("%d/%m/%Y") if datas else ""
 
+
+def _mapa_regulador(tabela: list[list] | None) -> dict[str, str]:
+    """{número do evento: regulador analista} da aba BASE REGULADOR ANALISTA (A=NUMERO, B=REGULADOR ANALISTA)."""
+    mapa: dict[str, str] = {}
+    for linha in (tabela or [])[1:]:   # pula o cabeçalho
+        if len(linha) >= 2:
+            numero, regulador = trim(linha[0]), trim(linha[1])
+            if numero and regulador:
+                mapa[numero] = regulador
+    return mapa
+
 N_SIGA = 41  # colunas A..AO da aba SIGA, repetidas em todas as abas de setor
 AL_CNPJ, AP_PARTICIPACAO = I.AL, I.AP
 DATAS_SIGA = (4, 12, 13, 17, 18, 19, I.Y, I.AA)  # E, M, N, R, S, T, Y, AA
@@ -75,6 +86,7 @@ ABA_CONSULTORES, ABA_OFICINAS, ABA_OFICINAS_CONSULTOR = "CONSULTORES TEC.", "Ofi
 ABA_REGULADORES, ABA_VISTORIA_INICIAL, ABA_NEGADOS_ABERTO, ABA_NEGADOS_FINALIZADOS = (
     "REGULADORES", "VISTORIA INICIAL", "NEGADOS EM ABERTO", "NEGADOS FINALIZADOS")
 ABA_BASE_VISTORIA, ABA_HISTORICO, ABA_REG_ANALISTA = "BASE VISTORIA INICIAL", "HISTÓRICO REGULARIZAÇÕES", "REGULADORES ANALISTA"
+ABA_BASE_REGULADOR = "BASE REGULADOR ANALISTA"   # NUMERO -> regulador analista, para os indicadores do painel
 
 
 @dataclass
@@ -643,7 +655,7 @@ def _reguladores(ctx: Contexto) -> None:
 
 def atualizar(cfg, log, siga: list[tuple[int, list]], resultado: I.Resultado, tarefas: list[list] | None,
               sga: list[list[str]], integ: list[list], edicoes: list[Path] | None = None, google=None,
-              base_vistoria: list[list] | None = None) -> tuple[int, list[Path]]:
+              base_vistoria: list[list] | None = None, base_regulador: list[list] | None = None) -> tuple[int, list[Path]]:
     """Incorpora o que foi salvo pela página de acompanhamento (`edicoes`), gera/atualiza as planilhas de
     setor configuradas e refaz a página. Devolve (quantas etapas falharam, arquivos de `edicoes` incorporados).
 
@@ -705,8 +717,9 @@ def atualizar(cfg, log, siga: list[tuple[int, list]], resultado: I.Resultado, ta
             ultimo_siga = _ultima_data_br(l[I.E_ABERTURA] if len(l) > I.E_ABERTURA else "" for _, l in siga)
             veiculos = S.BaseVeiculos(cfg.pasta_dados)
             veiculos.carregar()
+            reguladores = _mapa_regulador(base_regulador)
             n = A.gerar_pagina(cfg.pagina_acompanhamento, processos_analistas(ctx.linhas), manuais, historico,
-                               ultimo_sga, ultimo_siga, veiculos.dados)
+                               ultimo_sga, ultimo_siga, veiculos.dados, reguladores)
             log.info("Página %s: %d processos; %d a preencher, %d atrasados, %d em dia, %d concluídos.",
                      cfg.pagina_acompanhamento.name, sum(n.values()), n["PREENCHER"], n["ATRASADO"], n["EM DIA"], n["CONCLUÍDO"])
         except OSError as e:
