@@ -475,8 +475,13 @@ def executar(etapa_sga: bool, etapa_integracao: bool, usar_api: bool = True, eta
         # ---------------- página HTML da conferência de finalizados
         if etapa_painel and cfg.painel_finalizados:
             try:
+                ultimo_sga = setores._ultima_data_br(l[S.DT_COMUNICADO] if len(l) > S.DT_COMUNICADO else "" for l in base_sga.linhas)
+                ultimo_siga = setores._ultima_data_br(l[integracao.E_ABERTURA] if len(l) > integracao.E_ABERTURA else "" for _, l in siga)
+                veic = S.BaseVeiculos(cfg.pasta_dados)
+                veic.carregar()
+                regs = setores._mapa_regulador(tabelas_google.get(setores.ABA_BASE_REGULADOR))
                 r = painel.gerar(cfg.painel_finalizados, base_sga.linhas, base_integ.linhas, resultado, cfg.painel_desde, base_sga.origem,
-                                 vistos)
+                                 vistos, ultimo_sga, ultimo_siga, veic.dados, regs)
                 log.info("Página %s: %d eventos liberados desde %s; anotações: %d a verificar, %d a excluir, %d sem motivo; "
                          "%d com status diferente SIGA x SGA; %d sem correspondência no SGA; %d com setor registrado.",
                          cfg.painel_finalizados.name, r["eventos"], cfg.painel_desde.strftime("%d/%m/%Y"), r["anotacoes"]["arquivado"],

@@ -32,30 +32,37 @@ def _logo() -> str:
 
 
 def linhas_painel(sga: list[list[str]], integ: list[list], resultado: I.Resultado, desde: datetime.date,
-                  vistos=None) -> list[list]:
+                  vistos=None, veiculos=None, reguladores=None) -> list[list]:
     """Eventos finalizados no formato da página: textos em maiúsculas, datas aaaa-mm-dd, a anotação de conferência
-    e o último setor em que o processo apareceu na aba SIGA (`vistos`: setores.SetoresVistos)."""
+    e o último setor em que o processo apareceu na aba SIGA (`vistos`: setores.SetoresVistos).
+    `veiculos` (protocolo SGA -> {marca, modelo}) e `reguladores` (número -> regulador analista) alimentam os indicadores."""
+    veiculos, reguladores = veiculos or {}, reguladores or {}
     saida = []
-    for l in I.finalizados(sga, integ, resultado, desde):
+    for l in I.finalizados(sga, integ, resultado, desde, com_cidade=True):
         status_siga, status_sga, classificacao = trim(l[2]).upper(), trim(l[11]).upper(), trim(l[12]).upper()
+        vd = veiculos.get(trim(l[10])) or {}   # marca/modelo pelo PROTOCOLO SGA
         saida.append([
             l[0], trim(l[1]).upper(), status_siga, trim(l[3]).upper(), trim(l[4]), trim(l[5]),
             l[6] if _ISO.fullmatch(texto(l[6])) else "", l[7], l[8] if isinstance(l[8], int) else None, trim(l[9]), l[10],
             status_sga, classificacao, trim(l[13]), trim(l[14]), I.pendencia(status_siga, status_sga, classificacao),
             ", ".join(vistos.setores(l[0])) if vistos else "",
+            trim(l[16]), trim(vd.get("marca", "")), trim(vd.get("modelo", "")), trim(reguladores.get(l[0], "")),
         ])
     return saida
 
 
 def gerar(destino: Path, sga: list[list[str]], integ: list[list], resultado: I.Resultado, desde: datetime.date,
-          origem_sga: str, vistos=None) -> dict:
+          origem_sga: str, vistos=None, ultimo_sga: str = "", ultimo_siga: str = "",
+          veiculos: dict | None = None, reguladores: dict | None = None) -> dict:
     """Grava a página e devolve um resumo (quantidades) para o log."""
-    linhas = linhas_painel(sga, integ, resultado, desde, vistos)
+    linhas = linhas_painel(sga, integ, resultado, desde, vistos, veiculos, reguladores)
     dados = {
         "gerado": datetime.datetime.now().strftime("%d/%m/%Y %H:%M"),
         "desde": desde.strftime("%m/%Y"),
         "origem_sga": origem_sga or "sem dados",
         "eventos_siga": len(integ),
+        "ultimo_sga": ultimo_sga,
+        "ultimo_siga": ultimo_siga,
         "logo": _logo(),
         "linhas": linhas,
     }

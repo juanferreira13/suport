@@ -66,7 +66,7 @@ FINALIZADOS_COLUNAS = ["Numero", "Origem", "STATUS SIGA", "Nome", "Cobertura", "
 PENDENCIAS = {"arquivado": "Verificar", "excluir": "Por que excluir?", "motivo": "Incluir motivo"}
 
 
-def finalizados(sga: list[list[str]], integ: list[list], resultado: "Resultado", desde, ate=None) -> list[list]:
+def finalizados(sga: list[list[str]], integ: list[list], resultado: "Resultado", desde, ate=None, com_cidade=False) -> list[list]:
     """Eventos do SIGA com Liberação entre `desde` e `ate`, com a situação do evento no SGA.
 
     Uma linha por evento, nas colunas de FINALIZADOS_COLUNAS, ordenadas pela data de liberação.
@@ -82,12 +82,15 @@ def finalizados(sga: list[list[str]], integ: list[list], resultado: "Resultado",
         i = resultado.sga_por_chave.get(
             f"{trim(protocolo).upper()}|{trim(linha[G.COBERTURA]).upper()}|{trim(linha[G.PROPRIETARIO]).upper()}")
         evento = sga[i] if i is not None else None
-        linhas.append([
+        nova = [
             linha[G.NUMERO], linha[G.ORIGEM], linha[G.SITUACAO], linha[G.PROPRIETARIO], linha[G.COBERTURA], linha[G.PLACA],
             linha[G.ABERTURA], liberacao, linha[G.DURACAO], linha[G.OFICINA], protocolo,
             evento[S.SITUACAO] if evento else "", evento[S.CLASSIFICACAO] if evento else "", evento[S.UF] if evento else "",
             evento[S.COOPERATIVA] if evento else "", evento[S.DT_EVENTO] if evento else "",
-        ])
+        ]
+        if com_cidade:   # coluna extra (só para a página de conferência; não afeta quem chama sem o parâmetro)
+            nova.append(evento[S.CIDADE] if evento else "")
+        linhas.append(nova)
     linhas.sort(key=lambda l: (l[7], l[0]))
     return linhas
 

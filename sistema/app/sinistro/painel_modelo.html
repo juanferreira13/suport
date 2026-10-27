@@ -170,7 +170,7 @@
 <body>
 <div class="topo"><div class="largura">
   <span>Rotina do sinistro · <strong>Conferência de finalizados</strong></span>
-  <span>Atualizado em <strong id="gerado"></strong></span>
+  <span>Atualizado em <strong id="gerado"></strong> · Último SGA <strong id="ultimo-sga"></strong> · Último SIGA <strong id="ultimo-siga"></strong></span>
 </div></div>
 <header class="marca"><div class="largura">
   <div class="logo" id="logo"></div>
@@ -194,6 +194,10 @@
   <label class="campo">Status SGA <select id="f-sga"></select></label>
   <label class="campo">Conferência <select id="f-pend"></select></label>
   <label class="campo" title="Último setor em que o processo apareceu na aba SIGA (pela tarefa)">Setor <select id="f-setor"></select></label>
+  <label class="campo">Estado <select id="f-estado"></select></label>
+  <label class="campo">Cidade <select id="f-cidade"></select></label>
+  <label class="campo">Equipe <select id="f-equipe"></select></label>
+  <label class="campo">Regulador <select id="f-regulador"></select></label>
   <label class="campo">Buscar <input id="f-busca" type="search" placeholder="nome, placa, número ou protocolo"></label>
   <button class="botao claro" id="limpar" type="button">Limpar filtros</button>
 </div></section>
@@ -230,6 +234,16 @@
       <p class="sub">Classificação dos eventos negados no SIGA ou no SGA.</p>
       <div id="graf-motivos"></div>
     </section>
+    <section class="cartao" id="vidros">
+      <h2>Vidros — veículos mais acionados</h2>
+      <p class="sub">Marca e modelo dos eventos de vidros, por quantidade de acionamentos. Respeita os filtros acima.</p>
+      <div class="rolagem" id="tab-vidros"></div>
+    </section>
+    <section class="cartao" id="reguladores">
+      <h2>Por regulador analista</h2>
+      <p class="sub">Eventos por regulador analista (produtividade e distribuição). Respeita os filtros acima.</p>
+      <div class="rolagem" id="tab-reguladores"></div>
+    </section>
     <section class="cartao" id="lista">
       <div class="cabeca"><div><h2>Eventos</h2><p class="sub" id="lista-sub"></p></div>
         <button class="botao" id="exportar" type="button">Exportar CSV</button></div>
@@ -252,7 +266,7 @@
   "use strict";
   const D = JSON.parse(document.getElementById("dados").textContent);
   const LINHAS = D.linhas;
-  const C = { num: 0, origem: 1, siga: 2, nome: 3, cob: 4, placa: 5, abertura: 6, lib: 7, dur: 8, oficina: 9, prot: 10, sga: 11, classif: 12, uf: 13, coop: 14, pend: 15, setor: 16 };
+  const C = { num: 0, origem: 1, siga: 2, nome: 3, cob: 4, placa: 5, abertura: 6, lib: 7, dur: 8, oficina: 9, prot: 10, sga: 11, classif: 12, uf: 13, coop: 14, pend: 15, setor: 16, cidade: 17, marca: 18, modelo: 19, regulador: 20 };
   const PEND = {
     arquivado: { rotulo: "Verificar arquivamento", cor: "var(--aviso)", icone: "M10.5 3a7.5 7.5 0 1 0 4.6 13.4l4.2 4.3 1.5-1.5-4.3-4.2A7.5 7.5 0 0 0 10.5 3Zm0 2.2a5.3 5.3 0 1 1 0 10.6 5.3 5.3 0 0 1 0-10.6Z" },
     excluir: { rotulo: "Por que excluir?", cor: "var(--serio)", icone: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 15.6a1.3 1.3 0 1 1 0 2.6 1.3 1.3 0 0 1 0-2.6ZM12 5.6c2.3 0 4 1.5 4 3.6 0 1.6-.9 2.5-1.9 3.2-.8.6-1.1 1-1.1 1.9v.5h-2.1v-.7c0-1.6.7-2.4 1.7-3.1.8-.6 1.2-1 1.2-1.7 0-.9-.7-1.5-1.8-1.5s-1.9.6-2 1.7H7.9c.1-2.4 1.8-3.9 4.1-3.9Z" },
@@ -312,7 +326,7 @@
 
   // ---------------------------------------------------------------- filtros (uma linha, valem para tudo abaixo)
   const meses = [...new Set(LINHAS.map((l) => l[C.lib].slice(0, 7)))].sort();
-  const F = { de: meses[0] || "", ate: meses[meses.length - 1] || "", origem: "", cob: "", siga: null, sga: null, pend: "", setor: "", busca: "" };
+  const F = { de: meses[0] || "", ate: meses[meses.length - 1] || "", origem: "", cob: "", siga: null, sga: null, pend: "", setor: "", estado: "", cidade: "", equipe: "", regulador: "", busca: "" };
   const SEM_SETOR = "-";
   const setoresDe = (l) => (l[C.setor] ? l[C.setor].split(", ") : []);
   const campo = (id) => document.getElementById(id);
@@ -333,10 +347,15 @@
   const contSetor = new Map();
   for (const l of LINHAS) for (const s of setoresDe(l)) contSetor.set(s, (contSetor.get(s) || 0) + 1);
   opcoes(campo("f-setor"), [["", "Todos"], ...[...contSetor.entries()].sort((a, b) => b[1] - a[1]).map(([s]) => [s, s]), [SEM_SETOR, "(sem setor registrado)"]]);
+  opcoes(campo("f-estado"), [["", "Todos"], ...distintos(C.uf).filter(Boolean).map((v) => [v, v])]);
+  opcoes(campo("f-cidade"), [["", "Todas"], ...distintos(C.cidade).filter(Boolean).map((v) => [v, v])]);
+  opcoes(campo("f-equipe"), [["", "Todas"], ...distintos(C.coop).filter(Boolean).map((v) => [v, v])]);
+  opcoes(campo("f-regulador"), [["", "Todos"], ...distintos(C.regulador).filter(Boolean).map((v) => [v, v])]);
   function refletirFiltros() {
     campo("f-de").value = F.de; campo("f-ate").value = F.ate; campo("f-origem").value = F.origem; campo("f-cob").value = F.cob;
     campo("f-siga").value = F.siga === null ? "*" : F.siga; campo("f-sga").value = F.sga === null ? "*" : F.sga;
     campo("f-pend").value = F.pend; campo("f-setor").value = F.setor; campo("f-busca").value = F.busca;
+    campo("f-estado").value = F.estado; campo("f-cidade").value = F.cidade; campo("f-equipe").value = F.equipe; campo("f-regulador").value = F.regulador;
   }
   function lerFiltros() {
     F.de = campo("f-de").value; F.ate = campo("f-ate").value;
@@ -345,15 +364,16 @@
     F.siga = campo("f-siga").value === "*" ? null : campo("f-siga").value;
     F.sga = campo("f-sga").value === "*" ? null : campo("f-sga").value;
     F.pend = campo("f-pend").value; F.setor = campo("f-setor").value; F.busca = campo("f-busca").value.trim();
+    F.estado = campo("f-estado").value; F.cidade = campo("f-cidade").value; F.equipe = campo("f-equipe").value; F.regulador = campo("f-regulador").value;
   }
-  for (const id of ["f-de", "f-ate", "f-origem", "f-cob", "f-siga", "f-sga", "f-pend", "f-setor"]) campo(id).addEventListener("change", () => { lerFiltros(); atualizar(); });
+  for (const id of ["f-de", "f-ate", "f-origem", "f-cob", "f-siga", "f-sga", "f-pend", "f-setor", "f-estado", "f-cidade", "f-equipe", "f-regulador"]) campo(id).addEventListener("change", () => { lerFiltros(); atualizar(); });
   let espera = 0;
   campo("f-busca").addEventListener("input", () => { clearTimeout(espera); espera = setTimeout(() => { lerFiltros(); atualizar(); }, 180); });
   campo("limpar").addEventListener("click", () => {
-    Object.assign(F, { de: meses[0] || "", ate: meses[meses.length - 1] || "", origem: "", cob: "", siga: null, sga: null, pend: "", setor: "", busca: "" });
+    Object.assign(F, { de: meses[0] || "", ate: meses[meses.length - 1] || "", origem: "", cob: "", siga: null, sga: null, pend: "", setor: "", estado: "", cidade: "", equipe: "", regulador: "", busca: "" });
     refletirFiltros(); atualizar();
   });
-  function filtrar() {
+  function filtrar(comRegulador = true) {
     const termo = semAcento(F.busca);
     return LINHAS.filter((l) => {
       const m = l[C.lib].slice(0, 7);
@@ -367,7 +387,11 @@
       if (F.pend === "semsga" && l[C.sga] !== "") return false;
       if (PEND[F.pend] && l[C.pend] !== F.pend) return false;
       if (F.setor === SEM_SETOR ? l[C.setor] : F.setor && !setoresDe(l).includes(F.setor)) return false;
-      if (termo && !semAcento(l[C.nome] + " " + l[C.placa] + " " + l[C.placa].replace("-", "") + " " + l[C.num] + " " + l[C.prot] + " " + l[C.oficina]).includes(termo)) return false;
+      if (F.estado && l[C.uf] !== F.estado) return false;
+      if (F.cidade && l[C.cidade] !== F.cidade) return false;
+      if (F.equipe && l[C.coop] !== F.equipe) return false;
+      if (comRegulador && F.regulador && l[C.regulador] !== F.regulador) return false;
+      if (termo && !semAcento(l[C.nome] + " " + l[C.placa] + " " + l[C.placa].replace("-", "") + " " + l[C.num] + " " + l[C.prot] + " " + l[C.oficina] + " " + l[C.uf] + " " + l[C.cidade] + " " + l[C.coop] + " " + l[C.marca] + " " + l[C.modelo] + " " + l[C.regulador]).includes(termo)) return false;
       return true;
     });
   }
@@ -530,7 +554,8 @@
   // ---------------------------------------------------------------- lista
   const COLUNAS = [["Número", C.num, "fixo"], ["Origem", C.origem, "fixo"], ["Nome", C.nome, ""], ["Cobertura", C.cob, "fixo"], ["Placa", C.placa, "fixo"],
     ["Abertura", C.abertura, "fixo"], ["Liberação", C.lib, "fixo"], ["Dias", C.dur, "num"], ["Oficina", C.oficina, ""], ["Protocolo SGA", C.prot, "fixo"],
-    ["Status SIGA", C.siga, "fixo"], ["Status SGA", C.sga, "fixo"], ["Classificação negativa", C.classif, ""], ["Setor", C.setor, ""], ["Conferência", C.pend, "fixo"]];
+    ["Status SIGA", C.siga, "fixo"], ["Status SGA", C.sga, "fixo"], ["Classificação negativa", C.classif, ""], ["Setor", C.setor, ""], ["Conferência", C.pend, "fixo"],
+    ["Estado", C.uf, "fixo"], ["Cidade", C.cidade, ""], ["Equipe", C.coop, ""], ["Marca", C.marca, "fixo"], ["Modelo", C.modelo, ""], ["Regulador analista", C.regulador, ""]];
   const POR_PAGINA = 50;
   const lista = { ordem: C.lib, desc: true, pagina: 0, linhas: [] };
   function cabecalhoLista() {
@@ -580,15 +605,63 @@
     document.body.append(a); a.click(); a.remove();
   });
 
+  // ---------------------------------------------------------------- vidros (marca/modelo) e regulador analista
+  function vidrosTab(linhas) {
+    const caixa = campo("tab-vidros");
+    const m = new Map();
+    for (const l of linhas) {
+      if (!l[C.cob] || !l[C.cob].toUpperCase().includes("VIDRO")) continue;
+      const marca = (l[C.marca] || "").trim() || "—", modelo = (l[C.modelo] || "").trim() || "—";
+      const k = marca + " | " + modelo;
+      const o = m.get(k) || { marca, modelo, total: 0 };
+      o.total++; m.set(k, o);
+    }
+    if (!m.size) { caixa.replaceChildren(el("div", { class: "vazio" }, "Nenhum evento de vidros com os filtros atuais.")); return; }
+    const total = [...m.values()].reduce((s, o) => s + o.total, 0);
+    const t = el("table", { class: "lista" });
+    const cab = el("tr");
+    for (const n of ["Marca", "Modelo", "Acionamentos", "%"]) cab.append(el("th", { scope: "col" }, n));
+    t.appendChild(el("thead")).append(cab);
+    const corpo = t.appendChild(el("tbody"));
+    for (const o of [...m.values()].sort((a, b) => b.total - a.total || (a.marca + a.modelo).localeCompare(b.marca + b.modelo, "pt-BR"))) {
+      const tr = el("tr");
+      tr.append(el("td", null, o.marca), el("td", null, o.modelo), el("td", null, nf.format(o.total)), el("td", null, pct(o.total, total)));
+      corpo.append(tr);
+    }
+    caixa.replaceChildren(t);
+  }
+  function reguladoresTab(linhas) {
+    const caixa = campo("tab-reguladores");
+    const m = new Map();
+    for (const l of linhas) { const r = (l[C.regulador] || "").trim(); if (r) m.set(r, (m.get(r) || 0) + 1); }
+    if (!m.size) { caixa.replaceChildren(el("div", { class: "vazio" }, "Sem regulador analista nos eventos filtrados.")); return; }
+    const total = [...m.values()].reduce((s, v) => s + v, 0);
+    const t = el("table", { class: "lista" });
+    const cab = el("tr");
+    for (const n of ["Regulador analista", "Eventos", "%"]) cab.append(el("th", { scope: "col" }, n));
+    t.appendChild(el("thead")).append(cab);
+    const corpo = t.appendChild(el("tbody"));
+    for (const [nome, v] of [...m.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "pt-BR"))) {
+      const tr = el("tr", { tabindex: "0", role: "button", class: F.regulador === nome ? "ativa" : "", "aria-label": `${nome}: ${v} eventos. Filtrar` });
+      tr.append(el("td", null, nome), el("td", null, nf.format(v)), el("td", null, pct(v, total)));
+      aoAtivar(tr, () => { F.regulador = F.regulador === nome ? "" : nome; refletirFiltros(); atualizar(); });
+      corpo.append(tr);
+    }
+    caixa.replaceChildren(t);
+  }
+
   // ---------------------------------------------------------------- tudo se redesenha sobre o mesmo recorte
   function atualizar() {
     const linhas = filtrar();
     indicadores(linhas); mensal(linhas); pendencias(linhas); matriz(linhas); motivos(linhas);
+    vidrosTab(linhas); reguladoresTab(filtrar(false));
     lista.linhas = linhas; lista.pagina = 0; desenharLista();
     campo("lista-sub").textContent = `${nf.format(linhas.length)} de ${nf.format(LINHAS.length)} eventos, conforme os filtros acima.`;
   }
 
   campo("gerado").textContent = D.gerado;
+  campo("ultimo-sga").textContent = D.ultimo_sga || "—";
+  campo("ultimo-siga").textContent = D.ultimo_siga || "—";
   campo("descricao").textContent = `Eventos do SIGA liberados desde ${D.desde}, lado a lado com a situação de cada um no SGA. ` +
     "A página marca o que a conferência costuma anotar: arquivados a verificar, eventos marcados para excluir e negativas sem motivo. " +
     "O setor é o último em que o processo apareceu na aba SIGA; eventos que saíram da aba antes de o sistema começar a guardar isso ficam sem setor registrado.";
