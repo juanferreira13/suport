@@ -88,8 +88,9 @@ def finalizados(sga: list[list[str]], integ: list[list], resultado: "Resultado",
             evento[S.SITUACAO] if evento else "", evento[S.CLASSIFICACAO] if evento else "", evento[S.UF] if evento else "",
             evento[S.COOPERATIVA] if evento else "", evento[S.DT_EVENTO] if evento else "",
         ]
-        if com_cidade:   # coluna extra (só para a página de conferência; não afeta quem chama sem o parâmetro)
-            nova.append(evento[S.CIDADE] if evento else "")
+        if com_cidade:   # colunas extras só para a página de conferência (não afetam quem chama sem o parâmetro)
+            nova.append(evento[S.CIDADE] if evento else "")        # índice 16
+            nova.append(evento[S.MOTIVO] if evento else "")        # índice 17 (MOTIVO EVENTO: identifica VIDROS)
         linhas.append(nova)
     linhas.sort(key=lambda l: (l[7], l[0]))
     return linhas

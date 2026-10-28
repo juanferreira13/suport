@@ -46,7 +46,7 @@ def linhas_painel(sga: list[list[str]], integ: list[list], resultado: I.Resultad
             l[6] if _ISO.fullmatch(texto(l[6])) else "", l[7], l[8] if isinstance(l[8], int) else None, trim(l[9]), l[10],
             status_sga, classificacao, trim(l[13]), trim(l[14]), I.pendencia(status_siga, status_sga, classificacao),
             ", ".join(vistos.setores(l[0])) if vistos else "",
-            trim(l[16]), trim(vd.get("marca", "")), trim(vd.get("modelo", "")), trim(reguladores.get(l[0], "")),
+            trim(l[16]), trim(vd.get("marca", "")), trim(vd.get("modelo", "")), trim(reguladores.get(l[0], "")), trim(l[17]),
         ])
     return saida
 
