@@ -372,6 +372,7 @@ def main():
                 progresso(15+i*60/len(anos),f'Carregando Total Eventos Cadastrados {ano} ({i+1} de {len(anos)})')
                 print('\n---',ano,'---',flush=True)
                 item={'ano':ano};info['anos'].append(item)
+                parar=False   # vira True so se nao der para fechar o popup do relatorio -> interrompe os anos
                 try:
                     detalhe(f'selecionando {ano} no Dashboard')
                     preparar_ano(dash,ano)
@@ -432,7 +433,9 @@ def main():
                         guardar(info)
                         print('  FALHA AO FECHAR POPUP:', erro_fechar)
                         print('  Interrompendo a sequencia para nao confundir os anos.')
-                        break
+                        parar=True
+                if parar:   # fora do finally: um break dentro do finally engoliria excecoes em curso
+                    break
             # Ao terminar os anos, fechar SOMENTE a aba/janela Gerencial.
             # A guia principal SIGA continua aberta no objeto `page`, como na v2.
             print('\n--- Encerrando guia Gerencial / Dashboard Arco ---', flush=True)
