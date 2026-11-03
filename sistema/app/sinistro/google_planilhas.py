@@ -304,6 +304,39 @@ class PlanilhaGoogle:
             "pasteType": "PASTE_FORMULA"}})
         return ate_linha - ultima
 
+    def anexar_aba(self, aba: str, linhas: list[list], n_colunas: int, inicio: int,
+                   formatos: dict[int, str] | None = None) -> int:
+        """Acrescenta `linhas` a partir da linha `inicio` (1-based, inclusive), sem apagar nada acima nem abaixo.
+        Para abas que só crescem, como o HISTÓRICO. `formatos`: {coluna: formato de data}. Devolve a última linha gravada."""
+        real = self.aba(aba)
+        if real is None:
+            raise GoogleErro(f"a planilha {self.titulo} não tem a aba {aba}")
+        if not linhas:
+            return inicio - 1
+        info = self.abas[real]
+        ultima = inicio - 1 + len(linhas)
+        if info["linhas"] < ultima:
+            self._grade.append({"appendDimension": {"sheetId": info["id"], "dimension": "ROWS",
+                                                     "length": ultima + 200 - info["linhas"]}})
+            info["linhas"] = ultima + 200
+        if info["colunas"] < n_colunas:
+            self._grade.append({"appendDimension": {"sheetId": info["id"], "dimension": "COLUMNS",
+                                                     "length": n_colunas - info["colunas"]}})
+            info["colunas"] = n_colunas
+        c1, c2 = letra(1), letra(n_colunas)
+        self._alvos.append((real, inicio - 1, ultima, 0, n_colunas))
+        for k in range(0, len(linhas), LINHAS_POR_FAIXA):
+            bloco = [[_celula(v) for v in (list(l) + [None] * n_colunas)[:n_colunas]] for l in linhas[k:k + LINHAS_POR_FAIXA]]
+            self._valores.append({"range": self._faixa(real, f"{c1}{inicio + k}:{c2}{inicio + k - 1 + len(bloco)}"),
+                                  "values": bloco})
+        for coluna, formato in (formatos or {}).items():
+            self._formatos.append({"repeatCell": {
+                "range": {"sheetId": info["id"], "startRowIndex": inicio - 1, "endRowIndex": ultima,
+                          "startColumnIndex": coluna, "endColumnIndex": coluna + 1},
+                "cell": {"userEnteredFormat": {"numberFormat": _padrao_data(formato)}},
+                "fields": "userEnteredFormat.numberFormat"}})
+        return ultima
+
     def salvar(self) -> int:
         """Envia a fila: aumenta a grade, esvazia o que sobrou, grava os valores e aplica os formatos.
         Devolve quantas células foram gravadas."""
@@ -330,8 +363,10 @@ class PlanilhaGoogle:
                 lote.append(faixa)
                 linhas_lote += len(faixa["values"])
                 celulas += sum(len(l) for l in faixa["values"])
+        copypastes = [p for p in self._formatos if "copyPaste" in p]
+        outros = [p for p in self._formatos if "copyPaste" not in p]
         lote, peso = [], 0   # formatos célula a célula pesam: no máximo ~LINHAS_POR_ENVIO linhas por chamada
-        for pedido in self._formatos + [None]:
+        for pedido in outros + [None]:
             tamanho = len(pedido["updateCells"]["rows"]) if pedido and "updateCells" in pedido else 1
             if pedido is None or (lote and peso + tamanho > LINHAS_POR_ENVIO):
                 if lote:
@@ -340,9 +375,34 @@ class PlanilhaGoogle:
             if pedido is not None:
                 lote.append(pedido)
                 peso += tamanho
+        self._copypaste_sem_filtro(url, copypastes)   # por último: tira e recoloca o filtro em volta do copyPaste
         self._valores, self._limpar, self._grade, self._formatos, self._alvos = [], [], [], [], []
         self.recarregar()
         return celulas
+
+    def _copypaste_sem_filtro(self, url: str, pedidos: list[dict]) -> None:
+        """Aplica os copyPaste (extensão de fórmulas). O Google recusa copyPaste quando o intervalo tem
+        linha escondida por um filtro; então, nas abas com filtro, ele é retirado no MESMO batch do
+        copyPaste (sem janela sem filtro) e recolocado logo depois (melhor esforço: não derruba a gravação)."""
+        if not pedidos:
+            return
+        abas_ids = {p["copyPaste"]["destination"]["sheetId"] for p in pedidos if "copyPaste" in p}
+        filtros: dict[int, dict] = {}
+        try:
+            d = self.cliente.pedir("GET", url, params={"fields": "sheets(properties(sheetId),basicFilter)"})
+            for sh in d.get("sheets", []):
+                sid = sh.get("properties", {}).get("sheetId")
+                if sid in abas_ids and sh.get("basicFilter"):
+                    filtros[sid] = sh["basicFilter"]
+        except GoogleErro:
+            pass   # sem conseguir ler os filtros, tenta o copyPaste direto (no pior caso, falha como antes)
+        tira = [{"clearBasicFilter": {"sheetId": sid}} for sid in filtros]
+        self.cliente.pedir("POST", f"{url}:batchUpdate", json={"requests": tira + pedidos})
+        for spec in filtros.values():   # recoloca cada filtro; se falhar, os dados já foram gravados
+            try:
+                self.cliente.pedir("POST", f"{url}:batchUpdate", json={"requests": [{"setBasicFilter": {"filter": spec}}]})
+            except GoogleErro:
+                pass
 
     def _bloqueios(self) -> list[str]:
         """Áreas protegidas (que a conta de serviço não pode editar) que cruzam o que está na fila para gravar."""

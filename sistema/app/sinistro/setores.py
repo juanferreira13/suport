@@ -13,7 +13,7 @@ duas colunas próprias do setor:
         Oficinas por Consultor   oficinas com veículos, por consultor
     REGULADORES.xlsx
         REGULADORES          SETOR = REGULADORES, exceto VIDROS           + REGULARIZADO POR*
-        VISTORIA INICIAL     tudo, exceto VIDROS                          + DATA DA REGULAGEM, MES REFERENCIA
+        VISTORIA INICIAL     só as tarefas de TAREFAS_VISTORIA, exceto VIDROS + DATA DA REGULAGEM, MES REFERENCIA
         NEGADOS EM ABERTO    STATUS SGA = NEGADO e STATUS SIGA diferente de NEGADO
         NEGADOS FINALIZADOS  eventos do SIGA liberados no ano, com a situação do SGA
         HISTÓRICO REGULARIZAÇÕES   registro de cada REGULARIZADO POR preenchido
@@ -41,7 +41,7 @@ from . import acompanhamento as A
 from . import integracao as I
 from . import planilha as P
 from . import sga_base as S
-from .util import data_br, texto, trim
+from .util import data_br, sem_acento, texto, trim
 
 
 def _ultima_data_br(valores) -> str:
@@ -571,8 +571,18 @@ def eh_reguladores(l: Linha) -> bool:
     return l.setor == "REGULADORES" and not l.vidros
 
 
+def _norm_tarefa(t) -> str:
+    """Tarefa sem acento, em maiúsculas e com espaços normalizados, para comparar sem depender da grafia."""
+    return " ".join(sem_acento(texto(t)).upper().split())
+
+
+# A aba VISTORIA INICIAL traz só estas tarefas (o cliente não quer as demais); comparação por _norm_tarefa.
+TAREFAS_VISTORIA = {_norm_tarefa(t) for t in (
+    "Analisar Necessidade de Carro Reserva", "Vistoria Inicial", "Comunicar Autorizacao")}
+
+
 def eh_vistoria(l: Linha) -> bool:
-    return not l.vidros
+    return not l.vidros and _norm_tarefa(l.tarefa) in TAREFAS_VISTORIA
 
 
 def eh_negado_aberto(l: Linha) -> bool:
