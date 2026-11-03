@@ -51,6 +51,12 @@ def chave_cabecalho(v) -> str:
     return re.sub(r"[^A-Z0-9]", "", sem_acento(texto(v)).upper())
 
 
+def chave_regulador(nome, placa) -> tuple[str, str]:
+    """(nome, placa) normalizados, para casar um evento com um lançamento da aba REGULADORES ANALISTA,
+    que não tem o número do evento."""
+    return (" ".join(sem_acento(texto(nome)).upper().split()), re.sub(r"[^A-Z0-9]", "", texto(placa).upper()))
+
+
 def data_br(v) -> datetime.date | None:
     """Converte 'dd/mm/aaaa', 'aaaa-mm-dd' ou data em date; None se não for data válida."""
     if isinstance(v, datetime.datetime):

@@ -207,7 +207,7 @@ def _consultar_api(cfg: Config, base: S.BaseSga, log) -> None:
 
 # ---------------------------------------------------------------- sinistro no Google Sheets
 ABAS_GOOGLE = {planilha.ABA_SGA: "A:AB", planilha.ABA_INTEGRACAO: "A:S", planilha.ABA_SIGA: "A:AS",
-               planilha.ABA_TAREFAS: "A:C", setores.ABA_BASE_VISTORIA: "A:C", setores.ABA_BASE_REGULADOR: "A:C"}
+               planilha.ABA_TAREFAS: "A:C", setores.ABA_BASE_VISTORIA: "A:C"}
 SGA_FORMULAS = (S.N_COLUNAS + 1, S.N_COLUNAS + 5)          # AD..AH: NOME, PLACA, COMPETENCIA, STATUS SIGA, chave
 INTEGRACAO_FORMULAS = (G.N_COLUNAS + 1, G.N_COLUNAS + 3)   # T..V: PROTOCOLO, PLACA 2, COMPETENCIA
 SIGA_FORMULAS_A, SIGA_FORMULAS_X = (1, 1), (len(G.COLUNAS_TAREFAS) + 2, integracao.SIGA_COLUNAS)   # A e X..AS da aba SIGA
@@ -469,12 +469,21 @@ def executar(etapa_sga: bool, etapa_integracao: bool, usar_api: bool = True, eta
         if not sinistro_google:
             log.info("Gravado: %s (backup da versão anterior: %s).", cfg.planilha, info["backup"] or "não há")
 
+        # Regulador analista: casado por nome+placa a partir da aba REGULADORES ANALISTA (a BASE REGULADOR
+        # ANALISTA manual vivia incompleta). Lido uma vez, serve ao acompanhamento e ao painel.
+        reg_analista = None
+        if conta and cfg.google_reguladores:
+            try:
+                reg_analista = conta.planilha(cfg.google_reguladores).ler_abas(
+                    {setores.ABA_REG_ANALISTA: "A:C"}).get(setores.ABA_REG_ANALISTA)
+            except GoogleErro as e:
+                log.warning("Não li a aba %s para os indicadores de regulador analista (%s).", setores.ABA_REG_ANALISTA, e)
         # ---------------- planilhas dos setores, abastecidas pelo sinistro
         if etapa_setores:
             falhas, incorporados = setores.atualizar(cfg, log, siga, resultado, abas[planilha.ABA_TAREFAS], base_sga.linhas,
                                                      base_integ.linhas, entrada_pagina, google=conta,
                                                      base_vistoria=tabelas_google.get(setores.ABA_BASE_VISTORIA),
-                                                     base_regulador=tabelas_google.get(setores.ABA_BASE_REGULADOR))
+                                                     base_regulador=reg_analista)
             _arquivar(incorporados, cfg, log)
             if falhas:
                 codigo = PARCIAL
@@ -487,7 +496,7 @@ def executar(etapa_sga: bool, etapa_integracao: bool, usar_api: bool = True, eta
                 ultimo_siga = setores._ultima_data_br(l[integracao.E_ABERTURA] if len(l) > integracao.E_ABERTURA else "" for _, l in siga)
                 veic = S.BaseVeiculos(cfg.pasta_dados)
                 veic.carregar()
-                regs = setores._mapa_regulador(tabelas_google.get(setores.ABA_BASE_REGULADOR))
+                regs = setores._mapa_regulador(reg_analista)
                 r = painel.gerar(cfg.painel_finalizados, base_sga.linhas, base_integ.linhas, resultado, cfg.painel_desde, base_sga.origem,
                                  vistos, ultimo_sga, ultimo_siga, veic.dados, regs)
                 log.info("Página %s: %d eventos liberados desde %s; anotações: %d a verificar, %d a excluir, %d sem motivo; "

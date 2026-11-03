@@ -23,7 +23,7 @@ from pathlib import Path
 from . import integracao as I
 from . import registro
 from .painel import _logo
-from .util import data_br, texto, trim
+from .util import chave_regulador, data_br, texto, trim
 
 MODELO = Path(__file__).with_name("acompanhamento_modelo.html")
 TIPO_ARQUIVO = "acompanhamento-analistas"   # marca os arquivos salvos pela página
@@ -232,7 +232,7 @@ def _linhas_pagina(listas: list[tuple[str, list]], manuais, veiculos: dict | Non
                      manuais.obter(GRUPO_ATUALIZADO, numero), manuais.obter(GRUPO_ATUALIZADO_POR, numero),
                      trim(v[I.AD]), trim(v[I.AR]), trim(v[I.AO]),   # Estado, Cidade, Equipe (ex-Cooperativa) da aba SIGA
                      trim(vd.get("marca", "")), trim(vd.get("modelo", "")),   # Marca, Modelo (da API do SGA)
-                     trim(reguladores.get(numero, ""))]   # Regulador Analista (aba BASE REGULADOR ANALISTA)
+                     trim(reguladores.get(chave_regulador(v[I.I_NOME], v[10]), ""))]   # Regulador Analista (nome+placa da REGULADORES ANALISTA)
             vistos[numero] = linha
             saida.append(linha)
     return saida
@@ -246,7 +246,7 @@ def gerar_pagina(destino: Path, listas: list[tuple[str, list]], manuais, histori
     `ultimo_sga` / `ultimo_siga`: data do evento mais recente de cada sistema (dd/mm/aaaa), mostrada no
     cabeçalho para a equipe saber até quando os dados estão atualizados.
     `veiculos`: protocolo SGA -> {marca, modelo}, para os indicadores de Vidros.
-    `reguladores`: número do evento -> regulador analista, para os indicadores de produtividade."""
+    `reguladores`: (nome, placa) -> regulador analista, para os indicadores de produtividade."""
     agora = datetime.datetime.now()
     processos = _linhas_pagina(listas, manuais, veiculos, reguladores)
     analistas = sorted({p[7] for p in processos if p[7]} | {p[11] for p in processos if p[11]}, key=str.upper)

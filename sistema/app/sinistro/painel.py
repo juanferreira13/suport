@@ -13,7 +13,7 @@ from pathlib import Path
 
 from . import integracao as I
 from .config import SISTEMA
-from .util import texto, trim
+from .util import chave_regulador, texto, trim
 
 MODELO = Path(__file__).with_name("painel_modelo.html")
 LOGO_SITE = "https://www.supportgrupo.com.br/assets/images/uploads/imgs/configuracoes/logo-completa-horizontal.webp"
@@ -35,7 +35,7 @@ def linhas_painel(sga: list[list[str]], integ: list[list], resultado: I.Resultad
                   vistos=None, veiculos=None, reguladores=None) -> list[list]:
     """Eventos finalizados no formato da página: textos em maiúsculas, datas aaaa-mm-dd, a anotação de conferência
     e o último setor em que o processo apareceu na aba SIGA (`vistos`: setores.SetoresVistos).
-    `veiculos` (protocolo SGA -> {marca, modelo}) e `reguladores` (número -> regulador analista) alimentam os indicadores."""
+    `veiculos` (protocolo SGA -> {marca, modelo}) e `reguladores` ((nome, placa) -> regulador analista) alimentam os indicadores."""
     veiculos, reguladores = veiculos or {}, reguladores or {}
     saida = []
     for l in I.finalizados(sga, integ, resultado, desde, com_cidade=True):
@@ -46,7 +46,7 @@ def linhas_painel(sga: list[list[str]], integ: list[list], resultado: I.Resultad
             l[6] if _ISO.fullmatch(texto(l[6])) else "", l[7], l[8] if isinstance(l[8], int) else None, trim(l[9]), l[10],
             status_sga, classificacao, trim(l[13]), trim(l[14]), I.pendencia(status_siga, status_sga, classificacao),
             ", ".join(vistos.setores(l[0])) if vistos else "",
-            trim(l[16]), trim(vd.get("marca", "")), trim(vd.get("modelo", "")), trim(reguladores.get(l[0], "")), trim(l[17]),
+            trim(l[16]), trim(vd.get("marca", "")), trim(vd.get("modelo", "")), trim(reguladores.get(chave_regulador(l[3], l[5]), "")), trim(l[17]),
         ])
     return saida
 

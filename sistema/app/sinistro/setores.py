@@ -41,7 +41,7 @@ from . import acompanhamento as A
 from . import integracao as I
 from . import planilha as P
 from . import sga_base as S
-from .util import data_br, sem_acento, texto, trim
+from .util import chave_regulador, data_br, sem_acento, texto, trim
 
 
 def _ultima_data_br(valores) -> str:
@@ -52,14 +52,17 @@ def _ultima_data_br(valores) -> str:
     return max(datas).strftime("%d/%m/%Y") if datas else ""
 
 
-def _mapa_regulador(tabela: list[list] | None) -> dict[str, str]:
-    """{número do evento: regulador analista} da aba BASE REGULADOR ANALISTA (A=NUMERO, B=REGULADOR ANALISTA)."""
-    mapa: dict[str, str] = {}
+def _mapa_regulador(tabela: list[list] | None) -> dict[tuple[str, str], str]:
+    """{(nome, placa) normalizado: regulador analista} da aba REGULADORES ANALISTA (A=Nome, B=Placa,
+    C=REGULADOR ANALISTA). Casa por nome+placa porque essa aba não tem o número do evento; quando o mesmo
+    veículo aparece mais de uma vez, vale o último lançamento."""
+    mapa: dict[tuple[str, str], str] = {}
     for linha in (tabela or [])[1:]:   # pula o cabeçalho
-        if len(linha) >= 2:
-            numero, regulador = trim(linha[0]), trim(linha[1])
-            if numero and regulador:
-                mapa[numero] = regulador
+        linha = list(linha) + [None] * 3
+        regulador = trim(linha[2])
+        chave = chave_regulador(linha[0], linha[1])
+        if chave[0] and chave[1] and regulador:
+            mapa[chave] = regulador
     return mapa
 
 N_SIGA = 41  # colunas A..AO da aba SIGA, repetidas em todas as abas de setor
