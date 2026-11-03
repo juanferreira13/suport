@@ -104,14 +104,16 @@ def analistas(ctx: S.Contexto, planilha: PlanilhaGoogle) -> None:
 
 
 def reguladores(ctx: S.Contexto, planilha: PlanilhaGoogle, base_vistoria: list[list] | None) -> None:
-    grupo = f"{S.ABA_REGULADORES}/REGULARIZADO POR"
-    cab_reguladores = P.CABECALHO_SIGA[:S.N_SIGA] + ["REGULARIZADO POR"]
+    grupo = S.GRUPO_REGULARIZADO
+    cab_reguladores = S.CAB_REGULADORES
     cab_vistoria = P.CABECALHO_SIGA[:S.N_SIGA] + ["DATA DA REGULAGEM", "MES REFERENCIA"]
     cab_negados = P.CABECALHO_SIGA[:S.N_SIGA]
     atual = planilha.ler_abas({S.ABA_REGULADORES: COLUNAS_SETOR, S.ABA_HISTORICO: "A:D"})
     regularizados = ([] if atual[S.ABA_REGULADORES] is None
-                     else ctx.manuais.colher(grupo, S._pares(atual[S.ABA_REGULADORES], S.N_SIGA, com_tarefa=True)))
-    for aba, cabecalho, manuais in ((S.ABA_REGULADORES, cab_reguladores, (S.N_SIGA,)), (S.ABA_VISTORIA_INICIAL, cab_vistoria, ()),
+                     else ctx.manuais.colher(grupo, S._pares(atual[S.ABA_REGULADORES], S.REG_REGULARIZADO, com_tarefa=True)))
+    if atual[S.ABA_REGULADORES] is not None:   # CAMPO ADICIONAL também é digitado pela equipe
+        ctx.manuais.colher(S.GRUPO_CAMPO, S._pares(atual[S.ABA_REGULADORES], S.REG_CAMPO, com_tarefa=True))
+    for aba, cabecalho, manuais in ((S.ABA_REGULADORES, cab_reguladores, (S.REG_REGULARIZADO, S.REG_CAMPO)), (S.ABA_VISTORIA_INICIAL, cab_vistoria, ()),
                                     (S.ABA_NEGADOS_ABERTO, cab_negados, ()), (S.ABA_NEGADOS_FINALIZADOS, S.CAB_FINALIZADOS, ()),
                                     (S.ABA_HISTORICO, S.CAB_HISTORICO, ())):
         _garantir_aba(planilha, aba, cabecalho, manuais=manuais)
@@ -120,12 +122,12 @@ def reguladores(ctx: S.Contexto, planilha: PlanilhaGoogle, base_vistoria: list[l
                         planilha.titulo, S.ABA_BASE_VISTORIA)
     regulagem = S.regulagens(base_vistoria)
 
-    reguladores_ = S._linhas_aba(ctx.linhas, S.eh_reguladores, lambda l: [ctx.manuais.obter(grupo, f"{l.numero}|{l.tarefa}")],
-                                 valores=True)
+    reguladores_ = S._linhas_aba(ctx.linhas, S.eh_reguladores,
+                                 lambda l: S.extras_reguladores(l, ctx.manuais, ctx.reg_analista), valores=True)
     vistoria = S._linhas_aba(ctx.linhas, S.eh_vistoria, lambda l: S.extras_vistoria(l, regulagem), valores=True)
     abertos = S._linhas_aba(ctx.linhas, S.eh_negado_aberto, lambda l: [], valores=True)
     finalizados = S._negados_finalizados(ctx)
-    planilha.substituir_aba(S.ABA_REGULADORES, reguladores_, len(cab_reguladores), S._formatos_setor())
+    planilha.substituir_aba(S.ABA_REGULADORES, reguladores_, len(cab_reguladores), S.FORMATOS_REGULADORES)
     planilha.substituir_aba(S.ABA_VISTORIA_INICIAL, vistoria, len(cab_vistoria),
                             S._formatos_setor({S.N_SIGA: S.FMT_DATA, S.N_SIGA + 1: S.FMT_MES}))
     planilha.substituir_aba(S.ABA_NEGADOS_ABERTO, abertos, len(cab_negados), S._formatos_setor())

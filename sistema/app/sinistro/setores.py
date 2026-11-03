@@ -31,7 +31,7 @@ import copy
 import datetime
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from openpyxl import Workbook, load_workbook
@@ -406,6 +406,7 @@ class Contexto:
     sga: list[list[str]]
     integ: list[list]
     historico: A.Historico | None = None
+    reg_analista: dict = field(default_factory=dict)   # {(nome, placa): regulador analista} da aba REGULADORES ANALISTA
 
     def abrir(self, destino: Path, criar) -> tuple[P.EditorXlsx, bool]:
         """Garante que a planilha existe (criando na primeira vez) e devolve (editor, é nova?)."""
@@ -606,10 +607,32 @@ def extras_vistoria(linha: Linha, regulagem: dict[str, object]) -> list:
     return [data, data.replace(day=1) if isinstance(data, datetime.date) else ""]
 
 
+# Colunas próprias da aba REGULADORES, depois do bloco SIGA (A..AO). REGULARIZADO POR fica logo no índice
+# N_SIGA e não muda de lugar (pra não quebrar a leitura do que já está digitado na planilha). REGULADOR
+# ANALISTA é automática (casada por nome+placa); CAMPO ADICIONAL é digitada pela equipe; CIDADE e DATA
+# EVENTO vêm do bloco SIGA (que a aba cortava em AO).
+CAB_REGULADORES_EXTRA = ["REGULARIZADO POR", "REGULADOR ANALISTA", "CAMPO ADICIONAL", "CIDADE", "DATA EVENTO"]
+REG_REGULARIZADO, REG_ANALISTA, REG_CAMPO, REG_CIDADE, REG_DATA_EVENTO = range(N_SIGA, N_SIGA + 5)
+CAB_REGULADORES = P.CABECALHO_SIGA[:N_SIGA] + CAB_REGULADORES_EXTRA
+GRUPO_REGULARIZADO = f"{ABA_REGULADORES}/REGULARIZADO POR"
+GRUPO_CAMPO = f"{ABA_REGULADORES}/CAMPO ADICIONAL"
+FORMATOS_REGULADORES = _formatos_setor({REG_DATA_EVENTO: FMT_DATA})
+
+
+def extras_reguladores(l: Linha, manuais: Manuais, reg_analista: dict) -> list:
+    """As 5 colunas próprias da aba REGULADORES, na ordem de CAB_REGULADORES_EXTRA."""
+    chave = f"{l.numero}|{l.tarefa}"
+    return [manuais.obter(GRUPO_REGULARIZADO, chave),
+            reg_analista.get(chave_regulador(l.v[I.I_NOME], l.v[10]), ""),
+            manuais.obter(GRUPO_CAMPO, chave),
+            l.v[I.AR],                             # CIDADE
+            data_br(l.v[I.AS]) or l.v[I.AS]]       # DATA EVENTO (como data)
+
+
 def _reguladores(ctx: Contexto) -> None:
     destino = ctx.cfg.planilha_reguladores
-    grupo = f"{ABA_REGULADORES}/REGULARIZADO POR"
-    cab_reguladores = P.CABECALHO_SIGA[:N_SIGA] + ["REGULARIZADO POR"]
+    grupo = GRUPO_REGULARIZADO
+    cab_reguladores = CAB_REGULADORES
     cab_vistoria = P.CABECALHO_SIGA[:N_SIGA] + ["DATA DA REGULAGEM", "MES REFERENCIA"]
     cab_negados = P.CABECALHO_SIGA[:N_SIGA]
 
@@ -622,7 +645,8 @@ def _reguladores(ctx: Contexto) -> None:
         ctx.manuais.colher(grupo, ((f"{trim(l[0])}|{trim(l[1])}", trim(l[2])) for l in _dados(base["controle"], 3)))
         ctx.manuais.colher(grupo, _pares(base[ABA_REGULADORES], N_SIGA, com_tarefa=True))
         wb = Workbook()
-        _aba(wb, ABA_REGULADORES, _titulos(base[ABA_REGULADORES], cab_reguladores, N_SIGA), manuais=(N_SIGA,), formatos=_formatos_setor())
+        _aba(wb, ABA_REGULADORES, _titulos(base[ABA_REGULADORES], cab_reguladores, N_SIGA),
+             manuais=(REG_REGULARIZADO, REG_CAMPO), formatos=FORMATOS_REGULADORES)
         _aba(wb, ABA_VISTORIA_INICIAL, _titulos(base[ABA_VISTORIA_INICIAL], cab_vistoria, N_SIGA),
              formatos=_formatos_setor({N_SIGA: FMT_DATA, N_SIGA + 1: FMT_MES}))
         _aba(wb, ABA_NEGADOS_ABERTO, _titulos(base[ABA_NEGADOS_ABERTO], cab_negados, N_SIGA), formatos=_formatos_setor())
@@ -638,10 +662,12 @@ def _reguladores(ctx: Contexto) -> None:
 
     editor, nova = ctx.abrir(destino, criar)
     atual = P.ler_abas(destino, [ABA_REGULADORES, ABA_BASE_VISTORIA, ABA_HISTORICO])
-    regularizados = [] if nova else ctx.manuais.colher(grupo, _pares(atual[ABA_REGULADORES], N_SIGA, com_tarefa=True))
+    regularizados = [] if nova else ctx.manuais.colher(grupo, _pares(atual[ABA_REGULADORES], REG_REGULARIZADO, com_tarefa=True))
+    if not nova:   # CAMPO ADICIONAL também é digitado pela equipe; guarda o que está na planilha
+        ctx.manuais.colher(GRUPO_CAMPO, _pares(atual[ABA_REGULADORES], REG_CAMPO, com_tarefa=True))
 
     regulagem = regulagens(atual[ABA_BASE_VISTORIA])
-    reguladores = _linhas_aba(ctx.linhas, eh_reguladores, lambda l: [ctx.manuais.obter(grupo, f"{l.numero}|{l.tarefa}")])
+    reguladores = _linhas_aba(ctx.linhas, eh_reguladores, lambda l: extras_reguladores(l, ctx.manuais, ctx.reg_analista))
     vistoria = _linhas_aba(ctx.linhas, eh_vistoria, lambda l: extras_vistoria(l, regulagem))
     abertos = _linhas_aba(ctx.linhas, eh_negado_aberto, lambda l: [])
     finalizados = _negados_finalizados(ctx)
@@ -684,7 +710,8 @@ def atualizar(cfg, log, siga: list[tuple[int, list]], resultado: I.Resultado, ta
     historico = A.Historico(cfg.pasta_dados)
     historico.carregar()
     incorporados = A.aplicar(edicoes or [], manuais, historico, cfg.registro, log)
-    ctx = Contexto(cfg, log, montar_linhas(siga, resultado, tarefas), manuais, resultado, sga, integ, historico)
+    ctx = Contexto(cfg, log, montar_linhas(siga, resultado, tarefas), manuais, resultado, sga, integ, historico,
+                   _mapa_regulador(base_regulador))
     desconhecidas = collections.Counter(l.tarefa for l in ctx.linhas if l.setor == "SETOR DESCONHECIDO")
     if desconhecidas:
         log.warning("Tarefas sem setor na aba TAREFAS (não entram em nenhuma planilha de setor): %s",
@@ -730,7 +757,7 @@ def atualizar(cfg, log, siga: list[tuple[int, list]], resultado: I.Resultado, ta
             ultimo_siga = _ultima_data_br(l[I.E_ABERTURA] if len(l) > I.E_ABERTURA else "" for _, l in siga)
             veiculos = S.BaseVeiculos(cfg.pasta_dados)
             veiculos.carregar()
-            reguladores = _mapa_regulador(base_regulador)
+            reguladores = ctx.reg_analista
             n = A.gerar_pagina(cfg.pagina_acompanhamento, processos_analistas(ctx.linhas), manuais, historico,
                                ultimo_sga, ultimo_siga, veiculos.dados, reguladores)
             log.info("Página %s: %d processos; %d a preencher, %d atrasados, %d em dia, %d concluídos.",
