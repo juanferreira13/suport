@@ -61,6 +61,11 @@ class Config:
     pasta_logs: Path
     pasta_backups: Path
     backups_manter: int
+    # Busca incremental da API: a cada execução, re-confere só os últimos api_dias dias de cadastro
+    # (0 = todo o período desde data_inicial). Os eventos mais antigos já ficam salvos na base e quase
+    # não mudam. api_paralelo = quantas janelas de 30 dias são buscadas ao mesmo tempo.
+    api_dias: int = 120
+    api_paralelo: int = 6
     # Planilhas dos setores (None = não gerar) e as originais do Google usadas na primeira carga.
     planilha_analistas: Path | None = None
     planilha_consultores: Path | None = None
@@ -169,6 +174,8 @@ def carregar_config(arquivo_env: Path | None = None) -> Config:
         senha=obter("SGA_SENHA"),
         data_inicial=inicial,
         por_pagina=int(obter("SGA_API_POR_PAGINA", "100") or 100),
+        api_dias=max(0, int(obter("SGA_API_DIAS", "120") or 120)),
+        api_paralelo=max(1, int(obter("SGA_API_PARALELO", "6") or 6)),
         planilha=_caminho(obter("PLANILHA_SINISTRO", r"RESULTADOS\GERENCIAL SINISTRO.xlsx")),
         planilha_base=_caminho(base) if base else None,
         pasta_entrada=_caminho(obter("PASTA_ENTRADA", "ENTRADA")),

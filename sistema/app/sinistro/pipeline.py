@@ -175,11 +175,19 @@ def _normalizar(api: SgaApi, itens: list[dict], classificacoes: dict[str, str]) 
 
 
 def _consultar_api(cfg: Config, base: S.BaseSga, log) -> None:
-    api = SgaApi(cfg.api_url, cfg.token, cfg.usuario, cfg.senha, log)
+    api = SgaApi(cfg.api_url, cfg.token, cfg.usuario, cfg.senha, log, paralelo=cfg.api_paralelo)
     api.autenticar()
-    log.info("API SGA: autenticado. Buscando eventos cadastrados desde %s...", cfg.data_inicial.strftime("%d/%m/%Y"))
+    hoje = datetime.date.today()
+    # Incremental: re-confere só os últimos cfg.api_dias dias de cadastro (os eventos mais antigos já
+    # estão salvos na base e quase não mudam). Na primeira carga (base ainda vazia) busca o período inteiro.
+    if cfg.api_dias > 0 and base.linhas:
+        inicio = max(cfg.data_inicial, hoje - datetime.timedelta(days=cfg.api_dias))
+    else:
+        inicio = cfg.data_inicial
+    log.info("API SGA: autenticado. Buscando eventos cadastrados de %s a %s (até %d janela(s) em paralelo)...",
+             inicio.strftime("%d/%m/%Y"), hoje.strftime("%d/%m/%Y"), cfg.api_paralelo)
     classificacoes = api.classificacoes()
-    itens = api.listar_eventos(cfg.data_inicial, datetime.date.today(), cfg.por_pagina)
+    itens = api.listar_eventos(inicio, hoje, cfg.por_pagina)
     if not itens:
         log.warning("API SGA: nenhum evento retornado; a aba SGA ficou como estava.")
         return
@@ -192,7 +200,7 @@ def _consultar_api(cfg: Config, base: S.BaseSga, log) -> None:
     mudou = veiculos.aplicar_api(itens)
     veiculos.salvar()
     log.info("API SGA: marca/modelo guardados para %d veículos novos/alterados (total %d).", mudou, len(veiculos.dados))
-    registro.anotar(cfg.registro, registro.AUTOMATICO, "SGA", f"API desde {cfg.data_inicial:%d/%m/%Y}",
+    registro.anotar(cfg.registro, registro.AUTOMATICO, "SGA", f"API ({inicio:%d/%m/%Y} a {hoje:%d/%m/%Y})",
                     len(itens), f"importado: {resumo['novos']} novos, {sum(resumo['alteracoes'].values())} alterações", "", log)
     base.origem = f"{base.origem} + API em {datetime.datetime.now():%d/%m/%Y %H:%M}".strip(" +")
 

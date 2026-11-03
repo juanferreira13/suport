@@ -11,16 +11,20 @@ from __future__ import annotations
 import datetime
 import json
 import re
+import threading
 import time
 import urllib.error
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from . import sga_base as S
 from .util import formatar_reais, sem_acento, texto
 
 JANELA_DIAS = 30
 MAX_PAGINAS = 2000
-TENTATIVAS = 6   # esperas de 2, 4, 8, 16 e 32 s entre elas: quedas curtas da API não derrubam a rotina
+TENTATIVAS = 6   # com o teto abaixo, as esperas são 2, 4, 8, 8 e 8 s entre elas: quedas curtas da API não derrubam a rotina
+TETO_ESPERA = 8  # segundos: teto da espera entre tentativas (evita que uma janela em 502 gaste ~1 min só esperando)
+PARALELO_PADRAO = 6  # janelas de 30 dias buscadas ao mesmo tempo (a paginação dentro de cada janela é sequencial)
 LIMITE_POR_PAGINA = 100  # acima disso listar/evento responde HTTP 406 "Não aceitável" (testado em 14/10/2026)
 
 UFS = {
@@ -131,7 +135,8 @@ def completar_por_protocolo(linhas: list[list[str]]) -> list[list[str]]:
 
 
 class SgaApi:
-    def __init__(self, url: str, token: str, usuario: str, senha: str, log, pausa: float = 0.15, timeout: int = 90):
+    def __init__(self, url: str, token: str, usuario: str, senha: str, log, pausa: float = 0.15,
+                 timeout: int = 90, paralelo: int = PARALELO_PADRAO):
         self.url = url.rstrip("/")
         self.token = token
         self.usuario = usuario
@@ -139,9 +144,11 @@ class SgaApi:
         self.log = log
         self.pausa = pausa
         self.timeout = timeout
+        self.paralelo = max(1, paralelo)
         self.token_usuario = ""
         self.chamadas = 0
         self._avisos: set[str] = set()
+        self._lock = threading.Lock()   # protege chamadas/_avisos quando as janelas rodam em paralelo
 
     def _requisicao(self, metodo: str, caminho: str, corpo: dict | None = None, token: str | None = None):
         """Devolve (status, dados). Repete em falhas de rede, 429 e 5xx."""
@@ -155,8 +162,9 @@ class SgaApi:
         ultimo_erro = None
         for tentativa in range(TENTATIVAS):
             if tentativa:
-                time.sleep(2 ** tentativa)
-            self.chamadas += 1
+                time.sleep(min(2 ** tentativa, TETO_ESPERA))
+            with self._lock:
+                self.chamadas += 1
             try:
                 with urllib.request.urlopen(req, timeout=self.timeout) as resp:
                     status, bruto = resp.status, resp.read()
@@ -243,8 +251,11 @@ class SgaApi:
 
     def _avisar(self, mensagem: str, aviso: bool = True) -> None:
         """Registra cada mensagem diferente uma única vez por execução."""
-        if mensagem not in self._avisos:
-            self._avisos.add(mensagem)
+        with self._lock:
+            novo = mensagem not in self._avisos
+            if novo:
+                self._avisos.add(mensagem)
+        if novo:
             self.log.log(30 if aviso else 20, "API: %s", mensagem)
 
     def _coletar_janela(self, dia: datetime.date, ate: datetime.date, por_pagina: int, itens: dict[str, dict]) -> None:
@@ -280,24 +291,39 @@ class SgaApi:
     def listar_eventos(self, inicio: datetime.date, fim: datetime.date, por_pagina: int = LIMITE_POR_PAGINA) -> list[dict]:
         """Todos os itens de evento cadastrados entre as duas datas.
 
-        Se a API falhar num período (ex.: HTTP 502 em datas recentes), esse período é PULADO com um
-        aviso, sem derrubar o resto: os eventos das janelas que funcionaram continuam valendo.
+        As janelas de 30 dias são buscadas em paralelo (até self.paralelo ao mesmo tempo); a paginação
+        dentro de cada janela continua sequencial. Se a API falhar num período (ex.: HTTP 502 em datas
+        recentes), esse período é PULADO com um aviso, sem derrubar o resto: os eventos das janelas que
+        funcionaram continuam valendo.
         """
         if not self.token_usuario:
             self.autenticar()
         por_pagina = max(1, min(por_pagina, LIMITE_POR_PAGINA))
-        itens: dict[str, dict] = {}
-        janelas_com_erro = 0
+        janelas: list[tuple[datetime.date, datetime.date]] = []
         dia = inicio
         while dia <= fim:
             ate = min(dia + datetime.timedelta(days=JANELA_DIAS - 1), fim)
-            try:
-                self._coletar_janela(dia, ate, por_pagina, itens)
-            except SgaApiErro as e:
-                janelas_com_erro += 1
-                self.log.warning("API: pulei o período %s a %s porque a API falhou (%s).",
-                                 dia.strftime("%d/%m/%Y"), ate.strftime("%d/%m/%Y"), e)
+            janelas.append((dia, ate))
             dia = ate + datetime.timedelta(days=1)
+
+        def coletar(janela: tuple[datetime.date, datetime.date]) -> dict[str, dict]:
+            parcial: dict[str, dict] = {}
+            self._coletar_janela(janela[0], janela[1], por_pagina, parcial)
+            return parcial
+
+        itens: dict[str, dict] = {}
+        janelas_com_erro = 0
+        trabalhadores = max(1, min(self.paralelo, len(janelas)))
+        with ThreadPoolExecutor(max_workers=trabalhadores) as executor:
+            futuros = {executor.submit(coletar, j): j for j in janelas}
+            for futuro in as_completed(futuros):   # a ordem de término não importa: cada janela é independente
+                dia_ini, ate = futuros[futuro]
+                try:
+                    itens.update(futuro.result())   # as chaves já trazem o dia da janela no prefixo: não colidem
+                except SgaApiErro as e:
+                    janelas_com_erro += 1
+                    self.log.warning("API: pulei o período %s a %s porque a API falhou (%s).",
+                                     dia_ini.strftime("%d/%m/%Y"), ate.strftime("%d/%m/%Y"), e)
         if janelas_com_erro:
             self.log.warning("API: %d período(s) não puderam ser lidos (API instável ou fora do ar). Para trazer "
                              "esses eventos, exporte o relatório de eventos do SGA para a pasta ENTRADA.", janelas_com_erro)
