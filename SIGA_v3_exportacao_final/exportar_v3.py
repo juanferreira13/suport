@@ -362,6 +362,7 @@ def main():
                 info['fim']=datetime.now().isoformat(timespec='seconds');guardar(info)
                 return CODIGO_ERRO_LOGIN
             print('Login OK');print('@@LOGIN_OK',flush=True)
+            relatorios.fechar_popups(page)   # fecha os popups de boas-vindas/novidades que o SIGA abre apos o login
             progresso(12,'Carregando o Dashboard Arco')
             dash=relatorios.abrir_dashboard_arco(ctx,page)
             previa.seguir(dash)

@@ -105,12 +105,54 @@ def _excel_novo(ctx: BrowserContext):
     return None, None
 
 
+def fechar_popups(page: Page, tentativas: int = 4) -> None:
+    """Fecha os popups que o SIGA abre após o login (boas-vindas e 'novidades/nota de atualizações'),
+    que de outra forma travam a automação na tela inicial.
+
+    Best-effort e silencioso: procura em todos os frames e tenta Escape e os botões conhecidos
+    (fechar da janela, 'Não' das novidades, 'CONFIRMAR' das boas-vindas). Nunca levanta erro."""
+    seletores = [
+        '.modal.show :is(.btn-close, .close, [data-dismiss="modal"], [data-bs-dismiss="modal"], [aria-label="Close"])',
+        '[role="dialog"] :is(.btn-close, .close, [aria-label="Close"])',
+        ':is(button, input, a):text-is("Não")',
+        ':is(button, a):text-is("Fechar")',
+        ':is(.modal, [role="dialog"], form):has-text("vindo") :is(button, input):text-is("CONFIRMAR")',
+    ]
+    for _ in range(tentativas):
+        try:
+            page.keyboard.press("Escape")
+        except Exception:
+            pass
+        clicou = False
+        for frame in list(page.frames):
+            for sel in seletores:
+                try:
+                    alvos = frame.locator(sel)
+                    total = alvos.count()
+                except Exception:
+                    continue
+                for i in range(min(total, 3)):
+                    try:
+                        alvo = alvos.nth(i)
+                        if alvo.is_visible():
+                            alvo.click(timeout=2500)
+                            clicou = True
+                            page.wait_for_timeout(400)
+                    except Exception:
+                        pass
+        if not clicou:
+            return
+        page.wait_for_timeout(400)
+
+
 def baixar_controle_eventos(ctx: BrowserContext, page: Page, timeout_s: int = 90, fotografar=None):
     """Gráficos → lupa do 'Controle de Eventos' → Excel → salva em entrada/.
 
     fotografar(rotulo): opcional, salva diagnóstico da tela entre os passos.
     """
+    fechar_popups(page)   # popups de boas-vindas/novidades do SIGA travam a tela inicial
     abrir_graficos(page)
+    fechar_popups(page)   # podem reaparecer depois que os gráficos carregam
     if fotografar:
         fotografar("diag_1_graficos")
 
