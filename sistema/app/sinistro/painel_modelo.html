@@ -58,6 +58,7 @@
   .campo select, .campo input { font: 400 13px var(--fonte); color: var(--tinta); background: #fff; border: 1px solid var(--eixo); border-radius: 18px;
                                 padding: 6px 12px; min-width: 120px; height: 34px; }
   .campo input { min-width: 220px; }
+  .campo select[multiple] { height: auto; min-height: 34px; padding: 3px 8px; border-radius: 12px; }
   .campo select:focus, .campo input:focus { outline: 2px solid var(--verde); outline-offset: 1px; border-color: var(--verde-600); }
   .botao { font: 500 12px var(--fonte); letter-spacing: 1px; text-transform: uppercase; color: #fff; background: var(--cinza); border: 0; cursor: pointer;
            padding: 9px 20px; border-radius: 50px 50px 0 50px; height: 34px; }
@@ -193,7 +194,7 @@
   <label class="campo">Status SIGA <select id="f-siga"></select></label>
   <label class="campo">Status SGA <select id="f-sga"></select></label>
   <label class="campo">Conferência <select id="f-pend"></select></label>
-  <label class="campo" title="Último setor em que o processo apareceu na aba SIGA (pela tarefa)">Setor <select id="f-setor"></select></label>
+  <label class="campo" title="Último setor em que o processo apareceu na aba SIGA (pela tarefa). Vários com Ctrl/Cmd+clique — ex.: todos menos Vidros.">Setor (vários) <select id="f-setor" multiple size="3"></select></label>
   <label class="campo">Estado <select id="f-estado"></select></label>
   <label class="campo">Cidade <select id="f-cidade"></select></label>
   <label class="campo">Equipe <select id="f-equipe"></select></label>
@@ -236,7 +237,7 @@
     </section>
     <section class="cartao" id="vidros">
       <h2>Vidros — veículos mais acionados</h2>
-      <p class="sub">Marca e modelo dos eventos de vidros, por quantidade de acionamentos. Respeita os filtros acima.</p>
+      <p class="sub">Agrupado pelo modelo principal — clique numa linha para ver as versões. "Sem modelo identificado" = eventos sem modelo no SGA; o Total fica na última linha. Respeita os filtros acima.</p>
       <div class="rolagem" id="tab-vidros"></div>
     </section>
     <section class="cartao" id="reguladores">
@@ -326,7 +327,7 @@
 
   // ---------------------------------------------------------------- filtros (uma linha, valem para tudo abaixo)
   const meses = [...new Set(LINHAS.map((l) => l[C.lib].slice(0, 7)))].sort();
-  const F = { de: meses[0] || "", ate: meses[meses.length - 1] || "", origem: "", cob: "", siga: null, sga: null, pend: "", setor: "", estado: "", cidade: "", equipe: "", regulador: "", busca: "" };
+  const F = { de: meses[0] || "", ate: meses[meses.length - 1] || "", origem: "", cob: "", siga: null, sga: null, pend: "", setor: [], estado: "", cidade: "", equipe: "", regulador: "", busca: "" };
   const SEM_SETOR = "-";
   const setoresDe = (l) => (l[C.setor] ? l[C.setor].split(", ") : []);
   const campo = (id) => document.getElementById(id);
@@ -346,7 +347,7 @@
     ["motivo", PEND.motivo.rotulo], ["divergente", "Status diferente SIGA × SGA"], ["semsga", "Sem correspondência no SGA"]]);
   const contSetor = new Map();
   for (const l of LINHAS) for (const s of setoresDe(l)) contSetor.set(s, (contSetor.get(s) || 0) + 1);
-  opcoes(campo("f-setor"), [["", "Todos"], ...[...contSetor.entries()].sort((a, b) => b[1] - a[1]).map(([s]) => [s, s]), [SEM_SETOR, "(sem setor registrado)"]]);
+  opcoes(campo("f-setor"), [...[...contSetor.entries()].sort((a, b) => b[1] - a[1]).map(([s]) => [s, s]), [SEM_SETOR, "(sem setor registrado)"]]);
   opcoes(campo("f-estado"), [["", "Todos"], ...distintos(C.uf).filter(Boolean).map((v) => [v, v])]);
   opcoes(campo("f-cidade"), [["", "Todas"], ...distintos(C.cidade).filter(Boolean).map((v) => [v, v])]);
   opcoes(campo("f-equipe"), [["", "Todas"], ...distintos(C.coop).filter(Boolean).map((v) => [v, v])]);
@@ -354,7 +355,7 @@
   function refletirFiltros() {
     campo("f-de").value = F.de; campo("f-ate").value = F.ate; campo("f-origem").value = F.origem; campo("f-cob").value = F.cob;
     campo("f-siga").value = F.siga === null ? "*" : F.siga; campo("f-sga").value = F.sga === null ? "*" : F.sga;
-    campo("f-pend").value = F.pend; campo("f-setor").value = F.setor; campo("f-busca").value = F.busca;
+    campo("f-pend").value = F.pend; for (const o of campo("f-setor").options) o.selected = F.setor.includes(o.value); campo("f-busca").value = F.busca;
     campo("f-estado").value = F.estado; campo("f-cidade").value = F.cidade; campo("f-equipe").value = F.equipe; campo("f-regulador").value = F.regulador;
   }
   function lerFiltros() {
@@ -363,14 +364,14 @@
     F.origem = campo("f-origem").value; F.cob = campo("f-cob").value;
     F.siga = campo("f-siga").value === "*" ? null : campo("f-siga").value;
     F.sga = campo("f-sga").value === "*" ? null : campo("f-sga").value;
-    F.pend = campo("f-pend").value; F.setor = campo("f-setor").value; F.busca = campo("f-busca").value.trim();
+    F.pend = campo("f-pend").value; F.setor = [...campo("f-setor").selectedOptions].map((o) => o.value); F.busca = campo("f-busca").value.trim();
     F.estado = campo("f-estado").value; F.cidade = campo("f-cidade").value; F.equipe = campo("f-equipe").value; F.regulador = campo("f-regulador").value;
   }
   for (const id of ["f-de", "f-ate", "f-origem", "f-cob", "f-siga", "f-sga", "f-pend", "f-setor", "f-estado", "f-cidade", "f-equipe", "f-regulador"]) campo(id).addEventListener("change", () => { lerFiltros(); atualizar(); });
   let espera = 0;
   campo("f-busca").addEventListener("input", () => { clearTimeout(espera); espera = setTimeout(() => { lerFiltros(); atualizar(); }, 180); });
   campo("limpar").addEventListener("click", () => {
-    Object.assign(F, { de: meses[0] || "", ate: meses[meses.length - 1] || "", origem: "", cob: "", siga: null, sga: null, pend: "", setor: "", estado: "", cidade: "", equipe: "", regulador: "", busca: "" });
+    Object.assign(F, { de: meses[0] || "", ate: meses[meses.length - 1] || "", origem: "", cob: "", siga: null, sga: null, pend: "", setor: [], estado: "", cidade: "", equipe: "", regulador: "", busca: "" });
     refletirFiltros(); atualizar();
   });
   function filtrar(comRegulador = true) {
@@ -386,7 +387,7 @@
       if (F.pend === "divergente" && !divergente(l)) return false;
       if (F.pend === "semsga" && l[C.sga] !== "") return false;
       if (PEND[F.pend] && l[C.pend] !== F.pend) return false;
-      if (F.setor === SEM_SETOR ? l[C.setor] : F.setor && !setoresDe(l).includes(F.setor)) return false;
+      if (F.setor.length && !F.setor.some((s) => s === SEM_SETOR ? !l[C.setor] : setoresDe(l).includes(s))) return false;
       if (F.estado && l[C.uf] !== F.estado) return false;
       if (F.cidade && l[C.cidade] !== F.cidade) return false;
       if (F.equipe && l[C.coop] !== F.equipe) return false;
@@ -606,28 +607,56 @@
   });
 
   // ---------------------------------------------------------------- vidros (marca/modelo) e regulador analista
+  const modeloBase = (modelo) => (modelo ? modelo.split(/\s+/)[0] : "(sem modelo identificado)");
   function vidrosTab(linhas) {
     const caixa = campo("tab-vidros");
-    const m = new Map();
+    const grupos = new Map();   // marca + modelo base -> { marca, base, total, versoes: Map(modelo cheio -> n) }
+    let total = 0;
     for (const l of linhas) {
       if (!l[C.motivo] || !l[C.motivo].toUpperCase().includes("VIDRO")) continue;
-      const marca = (l[C.marca] || "").trim() || "—", modelo = (l[C.modelo] || "").trim() || "—";
-      const k = marca + " | " + modelo;
-      const o = m.get(k) || { marca, modelo, total: 0 };
-      o.total++; m.set(k, o);
+      total++;
+      const marca = (l[C.marca] || "").trim() || "—";
+      const modelo = (l[C.modelo] || "").trim();
+      const base = modeloBase(modelo), versao = modelo || "(sem modelo identificado)";
+      const k = marca + "\u0001" + base;
+      const o = grupos.get(k) || { marca, base, total: 0, versoes: new Map() };
+      o.total++; o.versoes.set(versao, (o.versoes.get(versao) || 0) + 1);
+      grupos.set(k, o);
     }
-    if (!m.size) { caixa.replaceChildren(el("div", { class: "vazio" }, "Nenhum evento de vidros com os filtros atuais.")); return; }
-    const total = [...m.values()].reduce((s, o) => s + o.total, 0);
+    if (!total) { caixa.replaceChildren(el("div", { class: "vazio" }, "Nenhum evento de vidros com os filtros atuais.")); return; }
     const t = el("table", { class: "lista" });
     const cab = el("tr");
-    for (const n of ["Marca", "Modelo", "Acionamentos", "%"]) cab.append(el("th", { scope: "col" }, n));
+    for (const n of ["Marca", "Modelo principal", "Acionamentos", "%"]) cab.append(el("th", { scope: "col" }, n));
     t.appendChild(el("thead")).append(cab);
     const corpo = t.appendChild(el("tbody"));
-    for (const o of [...m.values()].sort((a, b) => b.total - a.total || (a.marca + a.modelo).localeCompare(b.marca + b.modelo, "pt-BR"))) {
+    const ordenados = [...grupos.values()].sort((a, b) => b.total - a.total || (a.marca + a.base).localeCompare(b.marca + b.base, "pt-BR"));
+    for (const o of ordenados) {
+      const varias = o.versoes.size > 1;
       const tr = el("tr");
-      tr.append(el("td", null, o.marca), el("td", null, o.modelo), el("td", null, nf.format(o.total)), el("td", null, pct(o.total, total)));
+      const nomeTd = el("td");
+      if (varias) { tr.setAttribute("tabindex", "0"); tr.setAttribute("role", "button"); tr.setAttribute("aria-expanded", "false"); tr.style.cursor = "pointer"; nomeTd.append(el("span", { class: "giro" }, "▸ ")); }
+      nomeTd.append(document.createTextNode(o.base + (varias ? ` (${o.versoes.size} versões)` : "")));
+      tr.append(el("td", null, o.marca), nomeTd, el("td", null, nf.format(o.total)), el("td", null, pct(o.total, total)));
+      comDica(tr, () => [nf.format(o.total) + " acionamentos", [o.marca + " " + o.base, pct(o.total, total) + " dos vidros filtrados"]]);
       corpo.append(tr);
+      if (varias) {
+        const subs = [];
+        for (const [versao, n] of [...o.versoes.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "pt-BR"))) {
+          const s = el("tr", { class: "versao", hidden: "" });
+          s.append(el("td", null, ""), el("td", { style: "padding-left:26px;color:var(--tinta-2)" }, versao), el("td", null, nf.format(n)), el("td", null, pct(n, total)));
+          corpo.append(s); subs.push(s);
+        }
+        aoAtivar(tr, () => {
+          const abrir = tr.getAttribute("aria-expanded") !== "true";
+          tr.setAttribute("aria-expanded", String(abrir));
+          tr.querySelector(".giro").textContent = abrir ? "▾ " : "▸ ";
+          for (const s of subs) s.hidden = !abrir;
+        });
+      }
     }
+    const tt = el("tr", { style: "font-weight:600;background:var(--plano)" });
+    tt.append(el("td", null, ""), el("td", null, "Total (todos os vidros)"), el("td", null, nf.format(total)), el("td", null, "100%"));
+    corpo.append(tt);
     caixa.replaceChildren(t);
   }
   function reguladoresTab(linhas) {
