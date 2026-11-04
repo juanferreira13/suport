@@ -241,6 +241,7 @@ class PlanilhaGoogle:
         if real is None:
             raise GoogleErro(f"a planilha {self.titulo} não tem a aba {aba}")
         info = self.abas[real]
+        colunas_reais = info["colunas"]   # grade real antes de crescer: colunas novas ainda não existem no Google
         n = len(linhas)
         ultima = n + 1
         if info["linhas"] < ultima + 1:
@@ -257,7 +258,10 @@ class PlanilhaGoogle:
         if info["linhas"] > ultima:
             self._limpar.append(self._faixa(real, f"{c1}{ultima + 1}:{c2}{info['linhas']}"))
         colunas_data = {c: f for c, f in (formatos or {}).items() if n and primeira_coluna <= c < n_colunas}
-        da_equipe = self._formatos_atuais(real, list(colunas_data)) if colunas_data else {}
+        # só lê o formato da equipe nas colunas que já existem na grade do Google; coluna nova (ainda fora da grade)
+        # não tem formato a preservar e usa o do sistema — ler AT2:AT501 numa grade de 43 colunas estoura "exceeds grid limits".
+        existentes = [c for c in colunas_data if c < colunas_reais]
+        da_equipe = self._formatos_atuais(real, existentes) if existentes else {}
         for coluna, formato in colunas_data.items():
             # Vale o formato que a equipe já usa na coluna (ex.: "agosto/26"); o do sistema só onde não há nenhum.
             # Vai célula a célula (updateCells): o repeatCell é ignorado pelo Google em células que já têm formato de data.
