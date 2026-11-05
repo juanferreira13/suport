@@ -41,12 +41,6 @@ class SgaApiErro(Exception):
     pass
 
 
-class PaginaRecusada(SgaApiErro):
-    """A API recusou uma página (HTTP 406 'Não aceitável'): o período/página é grande demais.
-    Sinaliza para dividir a janela em partes menores em vez de perder os eventos restantes."""
-    pass
-
-
 def _data_para_br(v) -> str:
     """'2026-10-08' ou '2026-10-08T00:00:00-0300' -> '08/10/2026'. Mantém o que já vier em dd/mm/aaaa."""
     s = texto(v).strip()
@@ -248,12 +242,11 @@ class SgaApi:
             for valor in dados.values():
                 if isinstance(valor, list) and valor and isinstance(valor[0], dict):
                     return valor
-        if status == 406:   # período/página grande demais: sinaliza para dividir a janela e repaginar
-            raise PaginaRecusada(f"listar/evento recusou a página (HTTP 406): {_resumo(dados)}")
-        if status in (200, 204, 400, 404):
-            # A API responde com uma mensagem (e não uma lista) quando o período não tem eventos.
-            # 400 pode ser parâmetro recusado, então vira aviso.
-            self._avisar(f"listar/evento sem lista de eventos (HTTP {status}): {_resumo(dados)}", aviso=status == 400)
+        if status in (200, 204, 400, 404, 406):
+            # A API responde com uma mensagem (e não uma lista) quando o período não tem eventos, e
+            # devolve 406 quando se pede uma página ALÉM do fim dos dados: nos dois casos é o fim das
+            # páginas desta janela (o laço encerra porque a página volta vazia). 400 vira aviso.
+            self._avisar(f"listar/evento sem lista de eventos (HTTP {status}): {_resumo(dados)}", aviso=status in (400, 406))
             return []
         raise SgaApiErro(f"listar/evento respondeu HTTP {status}: {_resumo(dados)}")
 
@@ -267,31 +260,12 @@ class SgaApi:
             self.log.log(30 if aviso else 20, "API: %s", mensagem)
 
     def _coletar_janela(self, dia: datetime.date, ate: datetime.date, por_pagina: int, itens: dict[str, dict]) -> None:
-        """Coleta os eventos de um período para dentro de `itens`.
+        """Coleta os eventos de um período (uma janela) para dentro de `itens`. Pode lançar SgaApiErro.
 
-        Se a API recusar uma página (HTTP 406 — período/página grande demais), o período é dividido ao
-        meio e cada metade é tentada, até o dia a dia; assim nenhum bloco de eventos é perdido em silêncio.
-        Só um único dia que ainda assim seja recusado fica de fora, com aviso para exportar o relatório.
-        Pode lançar SgaApiErro se a API estiver instável."""
-        local: dict[str, dict] = {}
-        try:
-            self._paginar_periodo(dia, ate, por_pagina, local)
-        except PaginaRecusada as e:
-            if dia >= ate:   # já é um único dia: não há como dividir mais
-                self._avisar("a API recusou paginar um dia com muitos eventos (HTTP 406); esses eventos só virão "
-                             "pelo relatório de eventos do SGA exportado para a pasta ENTRADA.", aviso=True)
-                return
-            meio = dia + datetime.timedelta(days=(ate - dia).days // 2)
-            self.log.info("API: período %s a %s grande demais (%s); dividindo em dois.",
-                          dia.strftime("%d/%m/%Y"), ate.strftime("%d/%m/%Y"), e)
-            self._coletar_janela(dia, meio, por_pagina, itens)
-            self._coletar_janela(meio + datetime.timedelta(days=1), ate, por_pagina, itens)
-            return
-        itens.update(local)
-        self.log.info("API: %s a %s -> %d itens", dia.strftime("%d/%m/%Y"), ate.strftime("%d/%m/%Y"), len(local))
-
-    def _paginar_periodo(self, dia: datetime.date, ate: datetime.date, por_pagina: int, itens: dict[str, dict]) -> None:
-        """Pagina um período e põe os eventos em `itens`. Lança PaginaRecusada se a API recusar (HTTP 406)."""
+        Pagina até a página voltar VAZIA (ou repetir) — NÃO para numa página curta. Esta API devolve a
+        1ª página incompleta (ex.: 98 de 100) mesmo havendo mais páginas; parar na página curta deixava
+        centenas de eventos de fora em silêncio (ex.: outubro vinha com 98 em vez de 467). O fim da janela
+        é a página vazia: HTTP 200 "sem eventos" ou 406 "página além do fim", que zeram os itens novos."""
         vistos: set[str] = set()
         posicao, por_deslocamento = 0, False
         for _ in range(MAX_PAGINAS):
@@ -306,18 +280,17 @@ class SgaApi:
                     vistos.add(chave)
                     itens[f"{dia}|{chave}"] = item
                     novos += 1
-            if novos == 0:
+            if novos == 0:   # página vazia, repetida ou recusada no fim (406): acabaram as páginas
                 if pagina and posicao:
                     self._avisar("uma página repetiu os mesmos eventos da anterior; se o total de itens parecer "
                                  "baixo, a paginação da API não está respondendo como documentado")
-                break
-            if len(pagina) < por_pagina:  # página incompleta: era a última do período
                 break
             # A documentação não diz se inicio_paginacao é nº da página ou deslocamento.
             # Se a "página 1" repetir quase tudo da anterior, é deslocamento.
             if not por_deslocamento and posicao >= 1 and len(pagina) > 5 and novos < len(pagina) / 2:
                 por_deslocamento = True
             posicao = len(vistos) if por_deslocamento else posicao + 1
+        self.log.info("API: %s a %s -> %d itens", dia.strftime("%d/%m/%Y"), ate.strftime("%d/%m/%Y"), len(vistos))
 
     def listar_eventos(self, inicio: datetime.date, fim: datetime.date, por_pagina: int = LIMITE_POR_PAGINA) -> list[dict]:
         """Todos os itens de evento cadastrados entre as duas datas.
