@@ -236,12 +236,69 @@ def fechar_relatorio(dash, timeout_ms=7000):
     raise RuntimeError('Nao consegui fechar o popup do relatorio; interrompendo para evitar ano incorreto')
 
 
+def fechar_swal(dash):
+    """Fecha qualquer aviso SweetAlert2 (swal2) aberto no SIGA.
+
+    O backdrop do swal2 (.swal2-container) cobre a tela inteira e intercepta os cliques:
+    sem fecha-lo, o clique no botao Buscar estoura TimeoutError
+    ('<div class="swal2-container ..."> intercepts pointer events'). Melhor esforco:
+    nunca derruba o fluxo. Devolve True se havia um swal2 e ele foi fechado.
+    """
+    try:
+        if dash.is_closed():
+            return False
+        cont = dash.locator('.swal2-container')
+        if not cont.count():
+            return False
+        for sel in ('.swal2-confirm', '.swal2-close', '.swal2-cancel'):   # fecha do jeito certo (botao OK/X)
+            b = dash.locator(sel)
+            if b.count() and b.first.is_visible():
+                try:
+                    b.first.click(timeout=2000)
+                    break
+                except Exception:
+                    pass
+        # Garante que o overlay sumiu: API do SweetAlert2 e, por ultimo, remove o container no DOM.
+        dash.evaluate("""() => {
+          try { if (window.Swal && Swal.close) Swal.close(); } catch(e){}
+          document.querySelectorAll('.swal2-container').forEach(e => e.remove());
+          document.body.classList.remove('swal2-shown', 'swal2-height-auto', 'swal2-no-backdrop');
+        }""")
+        try:
+            cont.first.wait_for(state='detached', timeout=3000)
+        except Exception:
+            pass
+        return True
+    except Exception:
+        return False
+
+
+def clicar_buscar(dash):
+    """Clica em Buscar driblando um swal2 que porventura cubra a tela (3 tentativas + clique por JS)."""
+    botao = dash.locator('button[title="Buscar"]')
+    ultimo = None
+    for _ in range(3):
+        fechar_swal(dash)
+        try:
+            botao.first.click(timeout=15000)
+            return
+        except Exception as e:
+            ultimo = e
+            dash.wait_for_timeout(600)
+    fechar_swal(dash)
+    try:   # ultimo recurso: dispara o clique por JS, que ignora overlay interceptando o ponteiro
+        botao.first.evaluate('b => b.click()')
+    except Exception:
+        raise ultimo if ultimo is not None else RuntimeError('Nao consegui clicar em Buscar')
+
+
 def preparar_ano(dash, ano):
     fechar_relatorio(dash)
+    fechar_swal(dash)
     sel=dash.locator('#select_ano')
     dash.evaluate(relatorios.JS_MARCAR_BARRAS_VELHAS)
     sel.select_option(label=str(ano))
-    dash.locator('button[title="Buscar"]').click()
+    clicar_buscar(dash)
     try:dash.wait_for_load_state('networkidle',timeout=45000)
     except Exception:pass
     dash.wait_for_timeout(2000)
@@ -254,6 +311,7 @@ def preparar_ano(dash, ano):
     dash.locator('[data-siga-alvo]').scroll_into_view_if_needed()
     dash.wait_for_timeout(600)
     dash.evaluate(relatorios.JS_MARCAR_BARRA_TOTAL,True)
+    fechar_swal(dash)
     dash.locator('[data-siga-alvo]').click()
     dash.locator('#table_relatorio_eventos').wait_for(state='visible',timeout=45000)
     dash.wait_for_timeout(800)
@@ -403,6 +461,7 @@ def main():
                         if not botao.count() or not botao.is_visible():
                             botao=dash.locator('.modal.show :is(button, a):has-text("Excel")').first
                         botao.wait_for(state='visible',timeout=30000)
+                        fechar_swal(dash)
                         with dash.expect_download(timeout=300000) as dl:
                             botao.click()
                         download=dl.value
