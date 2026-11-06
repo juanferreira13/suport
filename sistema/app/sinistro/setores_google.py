@@ -13,7 +13,6 @@ VISTORIA PRESENCIAL, REGULADORES ANALISTA) e o HISTÓRICO REGULARIZAÇÕES, mant
 """
 from __future__ import annotations
 
-import datetime
 import re
 
 from . import acompanhamento as A
@@ -104,18 +103,14 @@ def analistas(ctx: S.Contexto, planilha: PlanilhaGoogle) -> None:
 
 
 def reguladores(ctx: S.Contexto, planilha: PlanilhaGoogle, base_vistoria: list[list] | None) -> None:
-    grupo = S.GRUPO_REGULARIZADO
     cab_reguladores = S.CAB_REGULADORES
     cab_vistoria = P.CABECALHO_SIGA[:S.N_SIGA] + ["DATA DA REGULAGEM", "MES REFERENCIA"]
     cab_negados = P.CABECALHO_SIGA[:S.N_SIGA]
-    atual = planilha.ler_abas({S.ABA_REGULADORES: COLUNAS_SETOR, S.ABA_HISTORICO: "A:D"})
-    regularizados = ([] if atual[S.ABA_REGULADORES] is None
-                     else ctx.manuais.colher(grupo, S._pares(atual[S.ABA_REGULADORES], S.REG_REGULARIZADO, com_tarefa=True)))
-    if atual[S.ABA_REGULADORES] is not None:   # CAMPO ADICIONAL também é digitado pela equipe
+    atual = planilha.ler_abas({S.ABA_REGULADORES: COLUNAS_SETOR})
+    if atual[S.ABA_REGULADORES] is not None:   # CAMPO ADICIONAL é digitado pela equipe
         ctx.manuais.colher(S.GRUPO_CAMPO, S._pares(atual[S.ABA_REGULADORES], S.REG_CAMPO, com_tarefa=True))
-    for aba, cabecalho, manuais in ((S.ABA_REGULADORES, cab_reguladores, (S.REG_REGULARIZADO, S.REG_CAMPO)), (S.ABA_VISTORIA_INICIAL, cab_vistoria, ()),
-                                    (S.ABA_NEGADOS_ABERTO, cab_negados, ()), (S.ABA_NEGADOS_FINALIZADOS, S.CAB_FINALIZADOS, ()),
-                                    (S.ABA_HISTORICO, S.CAB_HISTORICO, ())):
+    for aba, cabecalho, manuais in ((S.ABA_REGULADORES, cab_reguladores, (S.REG_CAMPO,)), (S.ABA_VISTORIA_INICIAL, cab_vistoria, ()),
+                                    (S.ABA_NEGADOS_ABERTO, cab_negados, ()), (S.ABA_NEGADOS_FINALIZADOS, S.CAB_FINALIZADOS, ())):
         _garantir_aba(planilha, aba, cabecalho, manuais=manuais)
     if base_vistoria is None:
         ctx.log.warning("%s: a aba %s do sinistro no Google não foi lida; DATA DA REGULAGEM fica em branco.",
@@ -132,17 +127,7 @@ def reguladores(ctx: S.Contexto, planilha: PlanilhaGoogle, base_vistoria: list[l
                             S._formatos_setor({S.N_SIGA: S.FMT_DATA, S.N_SIGA + 1: S.FMT_MES}))
     planilha.substituir_aba(S.ABA_NEGADOS_ABERTO, abertos, len(cab_negados), S._formatos_setor())
     planilha.substituir_aba(S.ABA_NEGADOS_FINALIZADOS, finalizados, len(S.CAB_FINALIZADOS), {6: S.FMT_DATA, 7: S.FMT_DATA})
-    if regularizados:   # cada regularização nova vira uma linha no HISTÓRICO, com a hora desta execução (como no .xlsx)
-        hist = atual.get(S.ABA_HISTORICO) or []
-        ultima = max((r for r, l in enumerate(hist, 1) if any(str(x).strip() for x in (list(l) + [None] * 4)[:4] if x is not None)),
-                     default=1)
-        agora = datetime.datetime.now().replace(microsecond=0)
-        novas = []
-        for chave, quem in regularizados:
-            numero, _, tarefa = chave.partition("|")
-            novas.append([agora, numero, tarefa, quem])
-        planilha.anexar_aba(S.ABA_HISTORICO, novas, len(S.CAB_HISTORICO), ultima + 1, formatos={0: S.FMT_DATA_HORA})
     celulas = planilha.salvar()
-    ctx.log.info("%s (Google): %s %d; %s %d (%d com regulagem); %s %d; %s %d; %d no histórico; %d células gravadas.", planilha.titulo,
+    ctx.log.info("%s (Google): %s %d; %s %d (%d com regulagem); %s %d; %s %d; %d células gravadas.", planilha.titulo,
                  S.ABA_REGULADORES, len(reguladores_), S.ABA_VISTORIA_INICIAL, len(vistoria), sum(1 for l in vistoria if l[S.N_SIGA]),
-                 S.ABA_NEGADOS_ABERTO, len(abertos), S.ABA_NEGADOS_FINALIZADOS, len(finalizados), len(regularizados), celulas)
+                 S.ABA_NEGADOS_ABERTO, len(abertos), S.ABA_NEGADOS_FINALIZADOS, len(finalizados), celulas)

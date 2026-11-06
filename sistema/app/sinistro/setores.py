@@ -12,11 +12,10 @@ duas colunas próprias do setor:
         Oficinas             tabela digitada; o script preenche CNPJ LIMPO, QUANTIDADE e VAGAS DISPONIVEIS
         Oficinas por Consultor   oficinas com veículos, por consultor
     REGULADORES.xlsx
-        REGULADORES          SETOR = REGULADORES, exceto VIDROS           + REGULARIZADO POR*
+        REGULADORES          SETOR = REGULADORES, exceto VIDROS           + REGULADOR ANALISTA, CAMPO ADICIONAL*
         VISTORIA INICIAL     só as tarefas de TAREFAS_VISTORIA, exceto VIDROS + DATA DA REGULAGEM, MES REFERENCIA
         NEGADOS EM ABERTO    STATUS SGA = NEGADO e STATUS SIGA diferente de NEGADO
         NEGADOS FINALIZADOS  eventos do SIGA liberados no ano, com a situação do SGA
-        HISTÓRICO REGULARIZAÇÕES   registro de cada REGULARIZADO POR preenchido
 
 (*) coluna digitada pela equipe. O que for digitado é guardado em dados/manuais.json e recolocado na
 linha do mesmo processo a cada atualização, mesmo que a linha mude de posição ou saia e volte.
@@ -501,7 +500,7 @@ def _consultores(ctx: Contexto) -> list[list] | None:
 # ----------------------------------------------------------------------------- ANALISTAS
 
 def _eh_analistas(l: Linha) -> bool:
-    return l.por_tarefa == "ANALISTAS" and not l.vidros
+    return l.por_tarefa == "ANALISTAS" and not l.vidros and l.setor != "FINANCEIRO"
 
 
 def _eh_vidros(l: Linha) -> bool:
@@ -607,23 +606,20 @@ def extras_vistoria(linha: Linha, regulagem: dict[str, object]) -> list:
     return [data, data.replace(day=1) if isinstance(data, datetime.date) else ""]
 
 
-# Colunas próprias da aba REGULADORES, depois do bloco SIGA (A..AO). REGULARIZADO POR fica logo no índice
-# N_SIGA e não muda de lugar (pra não quebrar a leitura do que já está digitado na planilha). REGULADOR
-# ANALISTA é automática (casada por nome+placa); CAMPO ADICIONAL é digitada pela equipe; CIDADE e DATA
-# EVENTO vêm do bloco SIGA (que a aba cortava em AO).
-CAB_REGULADORES_EXTRA = ["REGULARIZADO POR", "REGULADOR ANALISTA", "CAMPO ADICIONAL", "CIDADE", "DATA EVENTO"]
-REG_REGULARIZADO, REG_ANALISTA, REG_CAMPO, REG_CIDADE, REG_DATA_EVENTO = range(N_SIGA, N_SIGA + 5)
+# Colunas próprias da aba REGULADORES, depois do bloco SIGA (A..AO). REGULADOR ANALISTA é automática
+# (casada por nome+placa); CAMPO ADICIONAL é digitada pela equipe; CIDADE e DATA EVENTO vêm do bloco SIGA
+# (que a aba cortava em AO).
+CAB_REGULADORES_EXTRA = ["REGULADOR ANALISTA", "CAMPO ADICIONAL", "CIDADE", "DATA EVENTO"]
+REG_ANALISTA, REG_CAMPO, REG_CIDADE, REG_DATA_EVENTO = range(N_SIGA, N_SIGA + 4)
 CAB_REGULADORES = P.CABECALHO_SIGA[:N_SIGA] + CAB_REGULADORES_EXTRA
-GRUPO_REGULARIZADO = f"{ABA_REGULADORES}/REGULARIZADO POR"
 GRUPO_CAMPO = f"{ABA_REGULADORES}/CAMPO ADICIONAL"
 FORMATOS_REGULADORES = _formatos_setor({REG_DATA_EVENTO: FMT_DATA})
 
 
 def extras_reguladores(l: Linha, manuais: Manuais, reg_analista: dict) -> list:
-    """As 5 colunas próprias da aba REGULADORES, na ordem de CAB_REGULADORES_EXTRA."""
+    """As 4 colunas próprias da aba REGULADORES, na ordem de CAB_REGULADORES_EXTRA."""
     chave = f"{l.numero}|{l.tarefa}"
-    return [manuais.obter(GRUPO_REGULARIZADO, chave),
-            reg_analista.get(chave_regulador(l.v[I.I_NOME], l.v[10]), ""),
+    return [reg_analista.get(chave_regulador(l.v[I.I_NOME], l.v[10]), ""),
             manuais.obter(GRUPO_CAMPO, chave),
             l.v[I.AR],                             # CIDADE
             data_br(l.v[I.AS]) or l.v[I.AS]]       # DATA EVENTO (como data)
@@ -631,7 +627,6 @@ def extras_reguladores(l: Linha, manuais: Manuais, reg_analista: dict) -> list:
 
 def _reguladores(ctx: Contexto) -> None:
     destino = ctx.cfg.planilha_reguladores
-    grupo = GRUPO_REGULARIZADO
     cab_reguladores = CAB_REGULADORES
     cab_vistoria = P.CABECALHO_SIGA[:N_SIGA] + ["DATA DA REGULAGEM", "MES REFERENCIA"]
     cab_negados = P.CABECALHO_SIGA[:N_SIGA]
@@ -639,21 +634,17 @@ def _reguladores(ctx: Contexto) -> None:
     def criar():
         base = _ler_base(ctx.cfg.base_reguladores, {
             ABA_REGULADORES: ABA_REGULADORES, ABA_VISTORIA_INICIAL: ABA_VISTORIA_INICIAL, ABA_NEGADOS_ABERTO: ABA_NEGADOS_ABERTO,
-            "controle": "_CONTROLE_AP", ABA_HISTORICO: ABA_HISTORICO, ABA_REG_ANALISTA: ABA_REG_ANALISTA}, ctx.log)
+            ABA_REG_ANALISTA: ABA_REG_ANALISTA}, ctx.log)
         sinistro = _ler_base(ctx.cfg.planilha_base, {ABA_BASE_VISTORIA: ABA_BASE_VISTORIA}, ctx.log)
-        # O que já estava regularizado entra sem gerar novo registro no histórico.
-        ctx.manuais.colher(grupo, ((f"{trim(l[0])}|{trim(l[1])}", trim(l[2])) for l in _dados(base["controle"], 3)))
-        ctx.manuais.colher(grupo, _pares(base[ABA_REGULADORES], N_SIGA, com_tarefa=True))
         wb = Workbook()
         _aba(wb, ABA_REGULADORES, _titulos(base[ABA_REGULADORES], cab_reguladores, N_SIGA),
-             manuais=(REG_REGULARIZADO, REG_CAMPO), formatos=FORMATOS_REGULADORES)
+             manuais=(REG_CAMPO,), formatos=FORMATOS_REGULADORES)
         _aba(wb, ABA_VISTORIA_INICIAL, _titulos(base[ABA_VISTORIA_INICIAL], cab_vistoria, N_SIGA),
              formatos=_formatos_setor({N_SIGA: FMT_DATA, N_SIGA + 1: FMT_MES}))
         _aba(wb, ABA_NEGADOS_ABERTO, _titulos(base[ABA_NEGADOS_ABERTO], cab_negados, N_SIGA), formatos=_formatos_setor())
         _aba(wb, ABA_NEGADOS_FINALIZADOS, CAB_FINALIZADOS, formatos={6: FMT_DATA, 7: FMT_DATA})
         _aba(wb, ABA_BASE_VISTORIA, CAB_BASE_VISTORIA, manuais=(0, 1, 2), formatos={2: FMT_DATA},
              linhas=_dados(sinistro[ABA_BASE_VISTORIA], len(CAB_BASE_VISTORIA)))
-        _aba(wb, ABA_HISTORICO, CAB_HISTORICO, formatos={0: FMT_DATA_HORA}, linhas=_dados(base[ABA_HISTORICO], len(CAB_HISTORICO)))
         analista = _dados(base[ABA_REG_ANALISTA], len(CAB_REG_ANALISTA))
         for r, linha in enumerate(analista, 2):
             linha[5] = f'=IFERROR(IF(E{r}="","",DATE(YEAR(E{r}),MONTH(E{r}),1)),"")'
@@ -661,9 +652,8 @@ def _reguladores(ctx: Contexto) -> None:
         _salvar_nova(wb, destino)
 
     editor, nova = ctx.abrir(destino, criar)
-    atual = P.ler_abas(destino, [ABA_REGULADORES, ABA_BASE_VISTORIA, ABA_HISTORICO])
-    regularizados = [] if nova else ctx.manuais.colher(grupo, _pares(atual[ABA_REGULADORES], REG_REGULARIZADO, com_tarefa=True))
-    if not nova:   # CAMPO ADICIONAL também é digitado pela equipe; guarda o que está na planilha
+    atual = P.ler_abas(destino, [ABA_REGULADORES, ABA_BASE_VISTORIA])
+    if not nova:   # CAMPO ADICIONAL é digitado pela equipe; guarda o que está na planilha
         ctx.manuais.colher(GRUPO_CAMPO, _pares(atual[ABA_REGULADORES], REG_CAMPO, com_tarefa=True))
 
     regulagem = regulagens(atual[ABA_BASE_VISTORIA])
@@ -676,18 +666,9 @@ def _reguladores(ctx: Contexto) -> None:
     editor.substituir_aba(ABA_NEGADOS_ABERTO, abertos, len(cab_negados))
     editor.substituir_aba(ABA_NEGADOS_FINALIZADOS, finalizados, len(CAB_FINALIZADOS))
 
-    if regularizados:  # cada regularização nova vira uma linha no histórico, com a hora desta execução
-        ultima = max((r for r, l in enumerate(atual[ABA_HISTORICO] or [], 1) if any(texto(x).strip() for x in l[:4])), default=1)
-        agora = datetime.datetime.now().replace(microsecond=0)
-        registro = {}
-        for k, (chave, quem) in enumerate(regularizados, 1):
-            numero, _, tarefa = chave.partition("|")
-            registro[ultima + k] = {0: agora, 1: numero, 2: tarefa, 3: quem}
-        editor.atualizar_aba(ABA_HISTORICO, registro)
-
     ctx.salvar(editor, nova, f"{ABA_REGULADORES} {len(reguladores)}; {ABA_VISTORIA_INICIAL} {len(vistoria)} "
                f"({sum(1 for l in vistoria if l[N_SIGA])} com regulagem); {ABA_NEGADOS_ABERTO} {len(abertos)}; "
-               f"{ABA_NEGADOS_FINALIZADOS} {len(finalizados)}; {len(regularizados)} regularizações novas no histórico")
+               f"{ABA_NEGADOS_FINALIZADOS} {len(finalizados)}")
 
 
 # ----------------------------------------------------------------------------- entrada
