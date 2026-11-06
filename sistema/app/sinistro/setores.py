@@ -570,8 +570,13 @@ def _negados_finalizados(ctx: Contexto) -> list[list]:
     return linhas
 
 
+# A analista trabalha a aba REGULADORES filtrando por SETOR = REGULADORES ou TODOS
+# (TODOS = tarefas de finalização que também passam pela regulação).
+SETORES_REGULADORES = {"REGULADORES", "TODOS"}
+
+
 def eh_reguladores(l: Linha) -> bool:
-    return l.setor == "REGULADORES" and not l.vidros
+    return l.setor in SETORES_REGULADORES and not l.vidros
 
 
 def _norm_tarefa(t) -> str:
