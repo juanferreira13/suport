@@ -23,6 +23,14 @@ from .google_planilhas import GoogleErro, PlanilhaGoogle  # noqa: F401  (GoogleE
 _COPIA = {S.ABA_ANALISTAS: re.compile(r"\d{1,2}/\d{1,2}\s*ANALISTAS", re.I),
           S.ABA_VIDROS: re.compile(r"VIDROS\s*\d{1,2}/\d{1,2}", re.I)}
 COLUNAS_SETOR = "A:AT"
+VERMELHO = {"red": 1.0, "green": 0.0, "blue": 0.0}
+# Formatação condicional das abas ANALISTAS e VIDROS, como nas cópias diárias da equipe: realça em
+# vermelho ANALISTA (X) vazio, DATA COMUNICADO EVENTO (Y) vazia e DIAS ÚTEIS DO COMUNICADO (Z) acima de 10.
+REGRAS_CONDICIONAIS = [
+    {"colunas": (23, 24), "formula": "=LEN(TRIM($X2))=0", "cor": VERMELHO},
+    {"colunas": (24, 25), "formula": "=LEN(TRIM($Y2))=0", "cor": VERMELHO},
+    {"colunas": (25, 26), "formula": "=$Z2>10", "cor": VERMELHO},
+]
 
 
 def _garantir_aba(planilha: PlanilhaGoogle, nome: str, cabecalho: list[str], manuais: tuple = (), indice: int = 0,
@@ -100,6 +108,8 @@ def analistas(ctx: S.Contexto, planilha: PlanilhaGoogle) -> None:
         ctx.manuais.gravou(grupo, (l.numero for l in processos[aba]))
     ctx.log.info("%s (Google): %s %d linhas; %s %d linhas; %d células gravadas.", planilha.titulo, S.ABA_ANALISTAS,
                  len(linhas_analistas), S.ABA_VIDROS, len(linhas_vidros), celulas)
+    for aba in (S.ABA_ANALISTAS, S.ABA_VIDROS):   # realça ANALISTA/DATA vazios e dias úteis > 10, como na cópia da equipe
+        planilha.formatacao_condicional(aba, REGRAS_CONDICIONAIS)
 
 
 def reguladores(ctx: S.Contexto, planilha: PlanilhaGoogle, base_vistoria: list[list] | None) -> None:

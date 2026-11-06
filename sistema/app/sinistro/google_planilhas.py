@@ -308,6 +308,29 @@ class PlanilhaGoogle:
             "pasteType": "PASTE_FORMULA"}})
         return ate_linha - ultima
 
+    def formatacao_condicional(self, aba: str, regras: list[dict]) -> None:
+        """Substitui as regras de formatação condicional da aba pelas `regras` (idempotente: apaga as
+        atuais e põe estas, para não duplicar a cada execução). Cada regra:
+        {"colunas": (c0, c1), "formula": "=...", "cor": {...}} e vale da linha 2 para baixo. A fórmula é
+        relativa ao canto da faixa, então use a letra da coluna com linha 2 (ex.: "=LEN(TRIM($X2))=0")."""
+        real = self.aba(aba)
+        if real is None:
+            return
+        info = self.abas[real]
+        d = self.cliente.pedir("GET", f"{API}/{self.id}",
+                               params={"fields": "sheets(properties(sheetId),conditionalFormats)"})
+        atuais = next((len(sh.get("conditionalFormats", [])) for sh in d.get("sheets", [])
+                       if sh.get("properties", {}).get("sheetId") == info["id"]), 0)
+        pedidos = [{"deleteConditionalFormatRule": {"sheetId": info["id"], "index": 0}} for _ in range(atuais)]
+        for i, r in enumerate(regras):
+            c0, c1 = r["colunas"]
+            pedidos.append({"addConditionalFormatRule": {"index": i, "rule": {
+                "ranges": [{"sheetId": info["id"], "startRowIndex": 1, "startColumnIndex": c0, "endColumnIndex": c1}],
+                "booleanRule": {"condition": {"type": "CUSTOM_FORMULA", "values": [{"userEnteredValue": r["formula"]}]},
+                                "format": {"backgroundColor": r["cor"]}}}}})
+        if pedidos:
+            self.cliente.pedir("POST", f"{API}/{self.id}:batchUpdate", json={"requests": pedidos})
+
     def anexar_aba(self, aba: str, linhas: list[list], n_colunas: int, inicio: int,
                    formatos: dict[int, str] | None = None) -> int:
         """Acrescenta `linhas` a partir da linha `inicio` (1-based, inclusive), sem apagar nada acima nem abaixo.
